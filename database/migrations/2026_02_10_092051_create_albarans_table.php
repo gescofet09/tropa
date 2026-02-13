@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('pedido_id')->constrained('pedidos')->onDelete('cascade');
             $table->dateTime('fecha');
-            $table->string('archivo_pdf')->nullable();
+            $table->string('archivoPDF')->nullable();
             $table->timestamps();
         });
     }

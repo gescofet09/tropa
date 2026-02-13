@@ -64,7 +64,7 @@
                         <th>ID</th>
                         <th>Productos</th>
                         <th>Cantidad</th>
-                        <th>Estado</th>
+                        <!-- <th>Estado</th> -->
                         <th>Seguimiento</th>
                         <th>Documentos</th>
                     </tr>
@@ -83,12 +83,16 @@
                                     {{ $prod->pivot->cantidad }}<br>
                                 @endforeach
                             </td>
-                            <td>{{ $pedido->estado }}</td>
+                            <!-- <td>{{ $pedido->estado }}</td> -->
                             <td>
                                 <x-estado-pedido :estado="$pedido->estado" />
                             </td>
-                            <td>
-                                <a href="{{ route('pedidos.documentos', $pedido->id) }}" class="btn btn-outline-primary btn-sm">Ver</a>
+                            <td class="text-center">
+                                @if($pedido->factura && $pedido->factura->archivoPDF)
+                                    <a href="{{ asset($pedido->factura->archivoPDF) }}" target="_blank" class="btn btn-sm btn-primary" title="Ver Factura">
+                                        <i class="bi bi-file-earmark-pdf-fill"></i>
+                                    </a>
+                                @endif
                             </td>
                         </tr>
                     @endforeach

@@ -1,25 +1,39 @@
+@props(['estado'])
+
 @php
 // Lista de estados en orden
-$estados = ['pedido recibido', 'preparación', 'en reparto', 'entregado'];
+$estados = ['recibido', 'preparación', 'reparto', 'entregado'];
 
-// Normaliza el estado actual
-$estadoActual = $estado; // $estado viene del pedido
-if($estadoActual === 'preparado') {
-    $estadoActual = 'preparación';
-}
+// Colores según el estado
+$colores = [
+    'recibido' => 'bg-secondary text-white',
+    'preparación' => 'bg-warning text-dark',
+    'reparto' => 'bg-info text-dark',
+    'entregado' => 'bg-success text-white',
+];
+
+$estadoActual = $estado;
 @endphp
 
-<div class="timeline">
-@foreach ($estados as $estadoItem)
-    @php
-        $isActive = array_search($estadoActual, $estados) >= array_search($estadoItem, $estados);
-        $isCurrent = $estadoActual === $estadoItem;
-    @endphp
-    <div class="step 
-        @if($isActive) bg-success text-white @else bg-secondary text-white @endif
-        @if($isCurrent) fw-bold border border-dark @endif
-    ">
-        {{ ucfirst($estadoItem) }}
-    </div>
-@endforeach
+<div class="d-flex justify-content-between align-items-center">
+    @foreach ($estados as $estadoItem)
+        @php
+            $indexActual = array_search($estadoActual, $estados);
+            $indexItem = array_search($estadoItem, $estados);
+            $isPast = $indexItem < $indexActual;   // pasos completados
+            $isCurrent = $estadoItem === $estadoActual; // paso actual
+            $clase = $colores[$estadoItem];
+            $style = '';
+            if ($isCurrent) {
+                $style = 'border: 2px solid #000; font-weight: bold;';
+            }
+            if (!$isPast && !$isCurrent) {
+                $style .= ' opacity: 0.6;';
+            }
+        @endphp
+
+        <div class="step px-3 py-1 rounded text-center {{ $clase }}" style="{{ $style }}; min-width: 100px;">
+            {{ ucfirst($estadoItem) }}
+        </div>
+    @endforeach
 </div>

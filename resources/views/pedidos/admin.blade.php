@@ -23,7 +23,6 @@
                         <th>ID</th>
                         <th>Cliente</th>
                         <th>Repartidor</th>
-                        <th>Estado</th>
                         <th>Seguimiento</th>
                         <th>Acciones</th>
                     </tr>
@@ -34,7 +33,6 @@
                             <td>#{{ $pedido->id }}</td>
                             <td>{{ $pedido->cliente->name ?? 'Sin cliente' }}</td>
                             <td>{{ $pedido->repartidor->name ?? 'Sin asignar' }}</td>
-                            <td>{{ $pedido->estado }}</td>
                             <td><x-estado-pedido :estado="$pedido->estado" /></td>
                             <td class="d-flex gap-2">
                                 {{-- Botón Ver Pedido --}}

@@ -16,6 +16,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/pedidos', [PedidoController::class,'index'])->name('pedidos');
     Route::post('/pedidos', [PedidoController::class,'store'])->name('pedidos.store');
     Route::patch('/pedidos/{pedido}/estado', [PedidoController::class,'cambiarEstado'])->name('pedidos.actualizar');
+    Route::patch('/pedidos/{pedido}/estado', [PedidoController::class, 'cambiarEstado'])->name('pedidos.cambiarEstado');
     Route::get('/pedidos/{pedido}/documentos', [PedidoController::class,'verDocumentos'])->name('pedidos.documentos');
     Route::delete('/pedidos/{pedido}', [PedidoController::class, 'destroy'])->name('pedidos.destroy');
     Route::post('/pedidos/{pedido}/marcar', [PedidoController::class, 'marcarProductos'])->name('pedidos.marcarProductos');

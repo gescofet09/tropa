@@ -17,7 +17,7 @@ return new class extends Migration
             $table->dateTime('fecha');
             $table->string('numero')->unique();
             $table->decimal('total', 10, 2);
-            $table->string('archivo_pdf')->nullable();
+            $table->string('archivoPDF')->nullable();
             $table->timestamps();
         });
     }
