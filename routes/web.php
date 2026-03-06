@@ -20,5 +20,5 @@ Route::middleware('auth')->group(function () {
     Route::get('/pedidos/{pedido}/documentos', [PedidoController::class,'verDocumentos'])->name('pedidos.documentos');
     Route::delete('/pedidos/{pedido}', [PedidoController::class, 'destroy'])->name('pedidos.destroy');
     Route::post('/pedidos/{pedido}/marcar', [PedidoController::class, 'marcarProductos'])->name('pedidos.marcarProductos');
-
+    Route::post('/pedidos/{pedido}/repetir', [PedidoController::class, 'repetir'])->name('pedidos.repetir');
 });

@@ -9,6 +9,12 @@
         @php
             $estadoPedido = Str::slug($pedido->estado, '');
             $estadosTimeline = ['recibido','preparacion','reparto','entregado'];
+            $labelsTimeline = [
+                'recibido' => 'Recibido',
+                'preparacion' => 'Preparación',
+                'reparto' => 'Reparto',
+                'entregado' => 'Entregado',
+            ];
         @endphp
 
         <div class="card mb-3 shadow-sm p-3">
@@ -27,14 +33,14 @@
                     @php
                         $isActive = array_search($estadoPedido, $estadosTimeline) >= array_search($estado, $estadosTimeline);
                         $color = match($estado) {
-                            'recibido' => 'bg-secondary',
+                            'recibido' => 'bg-secondary text-white',
                             'preparacion' => 'bg-warning text-dark',
-                            'reparto' => 'bg-primary text-white',
+                            'reparto' => 'bg-info text-dark',
                             'entregado' => 'bg-success text-white',
                         };
                     @endphp
-                    <div class="flex-fill text-center p-1 mx-1 rounded {{ $isActive ? $color : 'bg-light' }}">
-                        {{ ucfirst($estado) }}
+                    <div class="flex-fill text-center p-1 mx-1 rounded {{ $isActive ? $color : 'bg-light text-muted' }}">
+                        {{ $labelsTimeline[$estado] }}
                     </div>
                 @endforeach
             </div>

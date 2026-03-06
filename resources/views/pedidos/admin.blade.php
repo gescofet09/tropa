@@ -29,11 +29,11 @@
                 </thead>
                 <tbody>
                     @foreach ($pedidos as $pedido)
-                        <tr>
+                        <tr data-pedido-id="{{ $pedido->id }}">
                             <td>#{{ $pedido->id }}</td>
                             <td>{{ $pedido->cliente->name ?? 'Sin cliente' }}</td>
                             <td>{{ $pedido->repartidor->name ?? 'Sin asignar' }}</td>
-                            <td><x-estado-pedido :estado="$pedido->estado" /></td>
+                            <td class="estado-pedido"><x-estado-pedido :estado="$pedido->estado" /></td>
                             <td class="d-flex gap-2">
                                 {{-- Botón Ver Pedido --}}
                                 <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#detalle-{{ $pedido->id }}" aria-expanded="false" aria-controls="detalle-{{ $pedido->id }}">
@@ -79,5 +79,21 @@
 
 {{-- Bootstrap JS para collapse --}}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+setInterval(() => {
+    document.querySelectorAll('tr[data-pedido-id]').forEach(row => {
+        const pedidoId = row.dataset.pedidoId;
+
+        fetch(`/pedidos/${pedidoId}/documentos`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.estado_html) {
+                    row.querySelector('.estado-pedido').innerHTML = data.estado_html;
+                }
+            });
+    });
+}, 5000);
+</script>
 
 @endsection

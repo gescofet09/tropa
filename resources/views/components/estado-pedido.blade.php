@@ -1,25 +1,34 @@
 @props(['estado'])
 
 @php
-// Lista de estados en orden
-$estados = ['recibido', 'preparación', 'reparto', 'entregado'];
+// Normalizamos sin acentos para evitar inconsistencias (preparacion/preparación).
+$estados = ['recibido', 'preparacion', 'reparto', 'entregado'];
 
-// Colores según el estado
 $colores = [
     'recibido' => 'bg-secondary text-white',
-    'preparación' => 'bg-warning text-dark',
+    'preparacion' => 'bg-warning text-dark',
     'reparto' => 'bg-info text-dark',
     'entregado' => 'bg-success text-white',
 ];
 
-$estadoActual = $estado;
+$labels = [
+    'recibido' => 'Recibido',
+    'preparacion' => 'Preparación',
+    'reparto' => 'Reparto',
+    'entregado' => 'Entregado',
+];
+
+$estadoActual = \Illuminate\Support\Str::slug($estado ?? '', '');
+$indexActual = array_search($estadoActual, $estados, true);
+if ($indexActual === false) {
+    $indexActual = 0;
+}
 @endphp
 
 <div class="d-flex justify-content-between align-items-center">
     @foreach ($estados as $estadoItem)
         @php
-            $indexActual = array_search($estadoActual, $estados);
-            $indexItem = array_search($estadoItem, $estados);
+            $indexItem = array_search($estadoItem, $estados, true);
             $isPast = $indexItem < $indexActual;   // pasos completados
             $isCurrent = $estadoItem === $estadoActual; // paso actual
             $clase = $colores[$estadoItem];
@@ -33,7 +42,7 @@ $estadoActual = $estado;
         @endphp
 
         <div class="step px-3 py-1 rounded text-center {{ $clase }}" style="{{ $style }}; min-width: 100px;">
-            {{ ucfirst($estadoItem) }}
+            {{ $labels[$estadoItem] }}
         </div>
     @endforeach
 </div>

@@ -37,7 +37,7 @@
                                         <div class="form-check mb-2">
                                             <input class="form-check-input" type="checkbox" name="productos[{{ $producto->id }}][id]" value="{{ $producto->id }}" id="producto-{{ $producto->id }}">
                                             <label class="form-check-label" for="producto-{{ $producto->id }}">
-                                                {{ $producto->nombre }} - {{ $producto->precio }}€/{{ $producto->unidad }} - Stock: {{ $producto->stock }}
+                                                <strong>{{ $producto->nombre }}</strong> - {{ $producto->precio }}€/{{ $producto->unidad }} - Stock: {{ $producto->stock }}
                                             </label>
                                             <input type="number" class="form-control form-control-sm mt-1" name="productos[{{ $producto->id }}][cantidad]" min="1" max="{{ $producto->stock }}" placeholder="Cantidad" style="width:100px;">
                                         </div>
@@ -63,30 +63,48 @@
                     <tr>
                         <th>ID</th>
                         <th>Productos</th>
-                        <th>Cantidad</th>
-                        <!-- <th>Estado</th> -->
                         <th>Seguimiento</th>
                         <th>Documentos</th>
+
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($pedidos as $pedido)
-                        <tr>
+                        <tr data-pedido-id="{{ $pedido->id }}">
                             <td>#{{ $pedido->id }}</td>
+
+                            {{-- Botón Ver Productos --}}
                             <td>
-                                @foreach($pedido->productos as $prod)
-                                    {{ $prod->nombre }}<br>
-                                @endforeach
+                                <button class="btn btn-primary btn-sm mb-1" type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#productos-{{ $pedido->id }}"
+                                        aria-expanded="false"
+                                        aria-controls="productos-{{ $pedido->id }}">
+                                    Ver Productos
+                                </button>
+
+                                <div class="collapse mt-2" id="productos-{{ $pedido->id }}">
+                                    @foreach($pedido->productos as $prod)
+                                        <div class="mb-1">
+                                            <strong>{{ $prod->nombre }}</strong>
+                                            <span class="text-muted small"> - Cantidad {{ $prod->pivot->cantidad }}</span>
+                                        </div>
+                                    @endforeach
+
+                                    {{-- Repetir Pedido completo --}}
+                                    <form action="{{ route('pedidos.repetir', $pedido->id) }}" method="POST" class="mt-2">
+                                        @csrf
+                                        <button type="submit" class="btn btn-success btn-sm w-100">Repetir pedido</button>
+                                    </form>
+                                </div>
                             </td>
-                            <td>
-                                @foreach($pedido->productos as $prod)
-                                    {{ $prod->pivot->cantidad }}<br>
-                                @endforeach
-                            </td>
-                            <!-- <td>{{ $pedido->estado }}</td> -->
-                            <td>
+
+                            {{-- Timeline --}}
+                            <td class="estado-pedido">
                                 <x-estado-pedido :estado="$pedido->estado" />
                             </td>
+
+                            {{-- Factura --}}
                             <td class="text-center">
                                 @if($pedido->factura && $pedido->factura->archivoPDF)
                                     <a href="{{ asset($pedido->factura->archivoPDF) }}" target="_blank" class="btn btn-sm btn-primary" title="Ver Factura">
@@ -94,6 +112,7 @@
                                     </a>
                                 @endif
                             </td>
+
                         </tr>
                     @endforeach
                 </tbody>
@@ -103,7 +122,24 @@
 
 </div>
 
-{{-- Bootstrap JS para collapse --}}
+{{-- Bootstrap JS --}}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+{{-- Polling automático cada 5 segundos para actualizar estado del pedido --}}
+<script>
+setInterval(() => {
+    document.querySelectorAll('tr[data-pedido-id]').forEach(row => {
+        const pedidoId = row.dataset.pedidoId;
+
+        fetch(`/pedidos/${pedidoId}/documentos`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.estado_html){
+                    row.querySelector('.estado-pedido').innerHTML = data.estado_html;
+                }
+            });
+    });
+}, 5000);
+</script>
 
 @endsection

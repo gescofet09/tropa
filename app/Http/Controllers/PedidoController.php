@@ -140,17 +140,19 @@ class PedidoController extends Controller
             ]);
         }
 
-        // Si al menos uno marcado → preparación
+        // Si hay al menos uno marcado -> preparacion
         if (!empty($productosMarcados)) {
-            $pedido->estado = 'preparación';
+            $pedido->estado = 'preparacion';
         } else {
             $pedido->estado = 'recibido';
         }
 
         $pedido->save();
 
-        return back();
+        // ✅ Devuelve JSON para que el JS funcione correctamente
+        return response()->json(['success' => true, 'estado' => $pedido->estado]);
     }
+
 
 
     /*
@@ -180,7 +182,7 @@ class PedidoController extends Controller
         // ======================
         // ALBARÁN
         // ======================
-        if ($nuevoEstado === 'preparación') {
+        if (\Illuminate\Support\Str::slug((string) $nuevoEstado, '') === 'preparacion') {
 
             // Crear registro de albarán
             $albaran = Albaran::create([
@@ -277,9 +279,40 @@ class PedidoController extends Controller
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
+        $pedido->load(['albaran', 'factura']);
+
         return response()->json([
+            'estado' => $pedido->estado,
+            'estado_html' => view('components.estado-pedido', ['estado' => $pedido->estado])->render(),
             'albaran' => $pedido->albaran,
             'factura' => $pedido->factura
         ]);
     }
+
+    public function repetir(Pedido $pedido)
+    {
+        $user = Auth::user();
+        if(!$user->esCliente()) {
+            return back()->with('error', 'No autorizado');
+        }
+
+        $nuevoPedido = Pedido::create([
+            'usuario_id' => $user->id,
+            'repartidor_id' => $pedido->repartidor_id,
+            'estado' => 'recibido',
+            'total' => $pedido->total
+        ]);
+
+        foreach ($pedido->productos as $producto) {
+            $nuevoPedido->productos()->attach($producto->id, [
+                'cantidad' => $producto->pivot->cantidad,
+                'precio_unitario' => $producto->pivot->precio_unitario,
+                'preparado' => false
+            ]);
+        }
+
+        return back()->with('success', 'Pedido repetido correctamente');
+    }
+    
+
 }
