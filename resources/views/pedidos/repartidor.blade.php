@@ -20,7 +20,7 @@
             ];
         @endphp
 
-        <article class="panel" x-data="{ open: false }">
+        <article class="panel" x-data="{ open: false }" @keydown.escape.window="open = false">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div class="space-y-4">
                     <div>
@@ -50,49 +50,66 @@
                     </div>
                 </div>
 
-                <button class="btn-primary self-start" type="button" @click="open = !open" x-text="open ? 'Ocultar pedido' : 'Ver pedido'"></button>
+                <button class="btn-primary self-start" type="button" @click="open = true">Ver pedido</button>
             </div>
 
-            <div x-show="open" class="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <form class="form-checklist space-y-2" id="form-pedido-{{ $pedido->id }}">
-                    @csrf
-                    @foreach($pedido->productos as $producto)
-                        <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
-                            @if(in_array($estadoPedido, ['recibido','preparacion']))
-                                <input
-                                    type="checkbox"
-                                    class="checkbox-producto h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-                                    data-pedido-id="{{ $pedido->id }}"
-                                    value="{{ $producto->id }}"
-                                    {{ $producto->pivot->preparado ? 'checked' : '' }}
-                                >
+            <template x-teleport="body">
+                <div x-show="open" x-cloak>
+                    <div class="modal-overlay" @click="open = false"></div>
+
+                    <div class="modal-panel max-w-3xl max-h-[85vh] overflow-y-auto" @click.stop>
+                        <div class="modal-header">
+                            <div>
+                                <h3 class="text-lg font-semibold text-slate-900">Pedido #{{ $pedido->id }}</h3>
+                                <p class="text-sm text-slate-500">Cliente: {{ $pedido->cliente->name }}</p>
+                            </div>
+
+                            <button class="btn-secondary" type="button" @click="open = false">Cerrar</button>
+                        </div>
+
+                        <div class="space-y-4">
+                            <form class="form-checklist space-y-2" id="form-pedido-{{ $pedido->id }}">
+                                @csrf
+                                @foreach($pedido->productos as $producto)
+                                    <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                        @if(in_array($estadoPedido, ['recibido','preparacion']))
+                                            <input
+                                                type="checkbox"
+                                                class="checkbox-producto h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                                                data-pedido-id="{{ $pedido->id }}"
+                                                value="{{ $producto->id }}"
+                                                {{ $producto->pivot->preparado ? 'checked' : '' }}
+                                            >
+                                        @endif
+
+                                        <span class="text-sm text-slate-700">
+                                            <strong class="font-semibold">{{ $producto->nombre }}</strong> - Cantidad: {{ $producto->pivot->cantidad }}
+                                        </span>
+                                    </label>
+                                @endforeach
+                            </form>
+
+                            <div class="accion-reparto {{ $estadoPedido === 'preparacion' ? '' : 'hidden' }}">
+                                <form action="{{ route('pedidos.cambiarEstado', $pedido->id) }}" method="POST">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="estado" value="reparto">
+                                    <button class="btn-primary" type="submit">Marcar como Reparto</button>
+                                </form>
+                            </div>
+
+                            @if($estadoPedido === 'reparto')
+                                <form action="{{ route('pedidos.cambiarEstado', $pedido->id) }}" method="POST">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="estado" value="entregado">
+                                    <button class="btn-success" type="submit">Marcar como Entregado</button>
+                                </form>
                             @endif
-
-                            <span class="text-sm text-slate-700">
-                                <strong class="font-semibold">{{ $producto->nombre }}</strong> - Cantidad: {{ $producto->pivot->cantidad }}
-                            </span>
-                        </label>
-                    @endforeach
-                </form>
-
-                <div class="accion-reparto {{ $estadoPedido === 'preparacion' ? '' : 'hidden' }}">
-                    <form action="{{ route('pedidos.cambiarEstado', $pedido->id) }}" method="POST">
-                        @csrf
-                        @method('PATCH')
-                        <input type="hidden" name="estado" value="reparto">
-                        <button class="btn-primary" type="submit">Marcar como Reparto</button>
-                    </form>
+                        </div>
+                    </div>
                 </div>
-
-                @if($estadoPedido === 'reparto')
-                    <form action="{{ route('pedidos.cambiarEstado', $pedido->id) }}" method="POST">
-                        @csrf
-                        @method('PATCH')
-                        <input type="hidden" name="estado" value="entregado">
-                        <button class="btn-success" type="submit">Marcar como Entregado</button>
-                    </form>
-                @endif
-            </div>
+            </template>
         </article>
     @endforeach
 </div>

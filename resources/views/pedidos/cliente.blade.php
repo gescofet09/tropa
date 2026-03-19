@@ -3,7 +3,7 @@
 @section('content')
 
 <div class="space-y-6">
-    <section class="panel" x-data="{ crearPedidoAbierto: {{ !empty($busqueda) ? 'true' : 'false' }} }">
+    <section class="panel" x-data="{ crearPedidoAbierto: {{ !empty($busqueda) ? 'true' : 'false' }} }" @keydown.escape.window="crearPedidoAbierto = false">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <h2 class="text-lg font-semibold text-slate-900">Productos</h2>
@@ -14,8 +14,8 @@
                 <button
                     class="btn-primary"
                     type="button"
-                    @click="crearPedidoAbierto = !crearPedidoAbierto"
-                    x-text="crearPedidoAbierto ? 'Ocultar pedido' : 'Crear nuevo pedido'"
+                    @click="crearPedidoAbierto = true"
+                    x-text="'Crear nuevo pedido'"
                 ></button>
 
                 <form id="form-busqueda-productos" action="{{ route('pedidos') }}" method="GET" class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -44,72 +44,89 @@
             @endif
         </div>
 
-        <div x-show="crearPedidoAbierto" class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-            <form action="{{ route('pedidos.store') }}" method="POST" class="space-y-4">
+        <template x-teleport="body">
+            <div x-show="crearPedidoAbierto" x-cloak>
+                <div class="modal-overlay" @click="crearPedidoAbierto = false"></div>
+
+                <div class="modal-panel max-h-[85vh] overflow-y-auto" @click.stop>
+                    <div class="modal-header">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900">Crear nuevo pedido</h3>
+                            <p class="text-sm text-slate-500">Selecciona productos y cantidades.</p>
+                        </div>
+
+                        <button class="btn-secondary" type="button" @click="crearPedidoAbierto = false">Cerrar</button>
+                    </div>
+
+                    <form action="{{ route('pedidos.store') }}" method="POST" class="space-y-4">
                 @csrf
 
-                @if(!empty($busqueda))
-                    <p class="text-sm text-slate-500">
-                        Resultados para: <span class="font-semibold text-slate-700">{{ $busqueda }}</span>
-                    </p>
-                @endif
+                        @if(!empty($busqueda))
+                            <p class="text-sm text-slate-500">
+                                Resultados para: <span class="font-semibold text-slate-700">{{ $busqueda }}</span>
+                            </p>
+                        @endif
 
-                @if($categorias->isEmpty())
-                    <div class="alert-warning">No se encontraron productos con esa búsqueda.</div>
-                @endif
+                        @if($categorias->isEmpty())
+                            <div class="alert-warning">No se encontraron productos con esa búsqueda.</div>
+                        @endif
 
-                <div class="space-y-3">
-                    @foreach($categorias as $categoria)
-                        <div class="rounded-2xl border border-slate-200 bg-white" x-data="{ open: {{ !empty($busqueda) ? 'true' : 'false' }} }">
-                            <button
-                                class="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-semibold text-slate-700"
-                                type="button"
-                                @click="open = !open"
-                            >
-                                <span>{{ $categoria->nombre }}</span>
-                                <svg class="h-4 w-4 text-slate-400 transition" :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
+                        <div class="space-y-3">
+                            @foreach($categorias as $categoria)
+                                <div class="rounded-2xl border border-slate-200 bg-white" x-data="{ open: {{ !empty($busqueda) ? 'true' : 'false' }} }">
+                                    <button
+                                        class="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-semibold text-slate-700"
+                                        type="button"
+                                        @click="open = !open"
+                                    >
+                                        <span>{{ $categoria->nombre }}</span>
+                                        <svg class="h-4 w-4 text-slate-400 transition" :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
 
-                            <div x-show="open" class="space-y-3 border-t border-slate-100 px-4 py-4">
-                                @foreach($categoria->productos as $producto)
-                                    <label class="block rounded-xl border border-slate-200 p-3">
-                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                            <div class="flex items-start gap-3">
-                                                <input
-                                                    class="mt-1 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-                                                    type="checkbox"
-                                                    name="productos[{{ $producto->id }}][id]"
-                                                    value="{{ $producto->id }}"
-                                                    id="producto-{{ $producto->id }}"
-                                                >
-                                                <div>
-                                                    <p class="font-semibold text-slate-800">{{ $producto->nombre }}</p>
-                                                    <p class="text-sm text-slate-500">{{ $producto->precio }}€/{{ $producto->unidad }} · Stock: {{ $producto->stock }}</p>
+                                    <div x-show="open" class="space-y-3 border-t border-slate-100 px-4 py-4">
+                                        @foreach($categoria->productos as $producto)
+                                            <label class="block rounded-xl border border-slate-200 p-3">
+                                                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                                    <div class="flex items-start gap-3">
+                                                        <input
+                                                            class="mt-1 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                                                            type="checkbox"
+                                                            name="productos[{{ $producto->id }}][id]"
+                                                            value="{{ $producto->id }}"
+                                                            id="producto-{{ $producto->id }}"
+                                                        >
+                                                        <div>
+                                                            <p class="font-semibold text-slate-800">{{ $producto->nombre }}</p>
+                                                            <p class="text-sm text-slate-500">{{ $producto->precio }}€/{{ $producto->unidad }} · Stock: {{ $producto->stock }}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <input
+                                                        type="number"
+                                                        class="input-base js-cantidad-producto w-full sm:w-28"
+                                                        name="productos[{{ $producto->id }}][cantidad]"
+                                                        min="1"
+                                                        max="{{ $producto->stock }}"
+                                                        placeholder="Cantidad"
+                                                        data-checkbox-id="producto-{{ $producto->id }}"
+                                                    >
                                                 </div>
-                                            </div>
-
-                                            <input
-                                                type="number"
-                                                class="input-base js-cantidad-producto w-full sm:w-28"
-                                                name="productos[{{ $producto->id }}][cantidad]"
-                                                min="1"
-                                                max="{{ $producto->stock }}"
-                                                placeholder="Cantidad"
-                                                data-checkbox-id="producto-{{ $producto->id }}"
-                                            >
-                                        </div>
-                                    </label>
-                                @endforeach
-                            </div>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
-                    @endforeach
-                </div>
 
-                <button type="submit" class="btn-success">Realizar pedido</button>
-            </form>
-        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" class="btn-success">Realizar pedido</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </template>
     </section>
 
     <section class="panel">
@@ -135,27 +152,44 @@
                         <tr data-pedido-id="{{ $pedido->id }}" class="align-top">
                             <td class="px-4 py-4 font-semibold text-slate-700">#{{ $pedido->id }}</td>
                             <td class="px-4 py-4">
-                                <div x-data="{ open: false }" class="space-y-3">
+                                <div x-data="{ open: false }" @keydown.escape.window="open = false" class="space-y-3">
                                     <button
                                         class="btn-primary btn-base !px-3 !py-1.5 text-xs"
                                         type="button"
-                                        @click="open = !open"
-                                        x-text="open ? 'Ocultar productos' : 'Ver productos'"
+                                        @click="open = true"
+                                        x-text="'Ver productos'"
                                     ></button>
 
-                                    <div x-show="open" class="detalle-productos-cliente space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                                        @foreach($pedido->productos as $prod)
-                                            <div class="flex items-center justify-between gap-3 text-sm">
-                                                <span class="font-medium text-slate-700">{{ $prod->nombre }}</span>
-                                                <span class="text-slate-500">Cantidad {{ $prod->pivot->cantidad }}</span>
-                                            </div>
-                                        @endforeach
+                                    <template x-teleport="body">
+                                        <div x-show="open" x-cloak>
+                                            <div class="modal-overlay" @click="open = false"></div>
 
-                                        <form action="{{ route('pedidos.repetir', $pedido->id) }}" method="POST" class="pt-2">
-                                            @csrf
-                                            <button type="submit" class="btn-success w-full">Repetir pedido</button>
-                                        </form>
-                                    </div>
+                                            <div class="modal-panel max-w-2xl" @click.stop>
+                                                <div class="modal-header">
+                                                    <div>
+                                                        <h3 class="text-lg font-semibold text-slate-900">Productos del pedido #{{ $pedido->id }}</h3>
+                                                        <p class="text-sm text-slate-500">Detalle del pedido actual.</p>
+                                                    </div>
+
+                                                    <button class="btn-secondary" type="button" @click="open = false">Cerrar</button>
+                                                </div>
+
+                                                <div class="space-y-2">
+                                                    @foreach($pedido->productos as $prod)
+                                                        <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                                                            <span class="font-medium text-slate-700">{{ $prod->nombre }}</span>
+                                                            <span class="text-slate-500">Cantidad {{ $prod->pivot->cantidad }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+
+                                                <form action="{{ route('pedidos.repetir', $pedido->id) }}" method="POST" class="mt-4">
+                                                    @csrf
+                                                    <button type="submit" class="btn-success w-full">Repetir pedido</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </div>
                             </td>
                             <td class="estado-pedido px-4 py-4">
