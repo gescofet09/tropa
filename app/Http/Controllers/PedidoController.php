@@ -19,9 +19,10 @@ class PedidoController extends Controller
     | LISTADO SEGÚN ROL
     |--------------------------------------------------------------------------
     */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
+        $busqueda = trim((string) $request->query('buscar', ''));
 
         // ADMIN
         if ($user->esAdmin()) {
@@ -46,9 +47,21 @@ class PedidoController extends Controller
                 ->where('usuario_id', $user->id)
                 ->get();
 
-            $categorias = Categoria::all();
+            $categorias = Categoria::query()
+                ->when($busqueda !== '', function ($query) use ($busqueda) {
+                    $query->whereHas('productos', function ($productoQuery) use ($busqueda) {
+                        $productoQuery->where('nombre', 'like', '%'.$busqueda.'%');
+                    });
+                })
+                ->with(['productos' => function ($query) use ($busqueda) {
+                    $query->when($busqueda !== '', function ($productoQuery) use ($busqueda) {
+                        $productoQuery->where('nombre', 'like', '%'.$busqueda.'%');
+                    })->orderBy('nombre');
+                }])
+                ->orderBy('nombre')
+                ->get();
 
-            return view('pedidos.cliente', compact('pedidos', 'categorias'));
+            return view('pedidos.cliente', compact('pedidos', 'categorias', 'busqueda'));
         }
     }
 
@@ -149,8 +162,11 @@ class PedidoController extends Controller
 
         $pedido->save();
 
-        // ✅ Devuelve JSON para que el JS funcione correctamente
-        return response()->json(['success' => true, 'estado' => $pedido->estado]);
+        return response()->json([
+            'success' => true,
+            'estado' => $pedido->estado,
+            'estado_html' => view('components.estado-pedido', ['estado' => $pedido->estado])->render(),
+        ]);
     }
 
 

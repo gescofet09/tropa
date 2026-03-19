@@ -10,7 +10,7 @@ class ProductoSeeder extends Seeder
 {
     public function run(): void
     {
-        //* buscar categorías existentes
+        //* categorías existentes
         $quesos = Categoria::where('nombre', 'QUESOS')->first();
         $fiambres = Categoria::where('nombre', 'FIAMBRES')->first();
         $huevos = Categoria::where('nombre', 'HUEVOS')->first();
@@ -39,22 +39,24 @@ class ProductoSeeder extends Seeder
             ['nombre' => 'QUESO MOZARELLA BARRA', 'precio' => 6.50, 'stock' => 600, 'categoria' => $quesos, 'unidad' => 'kg'],
             ['nombre' => 'QUESO LONCHEADO GFV GOUDA 1KG', 'precio' => 7.45, 'stock' => 300, 'categoria' => $quesos, 'unidad' => 'ud'],
             ['nombre' => 'QUESO LONCHEADO GFV EDAM 1KG', 'precio' => 7.45, 'stock' => 300, 'categoria' => $quesos, 'unidad' => 'ud'],
-            ['nombre' => 'QUESO AZUL', 'precio' => 6.80, 'stock' => 150, 'categoria' => $quesos, 'unidad' => 'kg'],
+            ['nombre' => 'QUESO AZUL', 'precio' => 8.80, 'stock' => 150, 'categoria' => $quesos, 'unidad' => 'kg'],
             ['nombre' => 'QUESO DE CABRA RULO CON PAJA', 'precio' => 11.00, 'stock' => 200, 'categoria' => $quesos, 'unidad' => 'kg'],
             ['nombre' => 'QUESO FRESCO VACA', 'precio' => 6.50, 'stock' => 900, 'categoria' => $quesos, 'unidad' => 'kg'],
             ['nombre' => 'QUESO FRESCO DE CABRA', 'precio' => 10.35, 'stock' => 900, 'categoria' => $quesos, 'unidad' => 'kg'],
         ];
 
         $productosFiambres = [
-            ['nombre' => 'PATA ASADA GRANJA FLOR', 'precio' => 10.25, 'stock' => 50, 'categoria' => $fiambres, 'unidad' => 'kg'],
-            ['nombre' => 'CHORIZO TEROR', 'precio' => 5.27, 'stock' => 50, 'categoria' => $fiambres, 'unidad' => 'kg'],
-            ['nombre' => 'FIAMBRE DE CERDO PARIS', 'precio' => 3.95, 'stock' => 50, 'categoria' => $fiambres, 'unidad' => 'kg'],
-            ['nombre' => 'LOMO ADOBADO GRANJA FLOR ENTERO', 'precio' => 5.20, 'stock' => 50, 'categoria' => $fiambres, 'unidad' => 'kg'],
-            ['nombre' => 'BACON EXTRA GRANJA FLOR ENTERO', 'precio' => 5.60, 'stock' => 50, 'categoria' => $fiambres, 'unidad' => 'kg'],
-            ['nombre' => 'CENTRO DE JAMON SERRANO EN MITADES', 'precio' => 11.32, 'stock' => 50, 'categoria' => $fiambres, 'unidad' => 'kg'],
-            ['nombre' => 'PALETA SANDWICH 11X11', 'precio' => 4.40, 'stock' => 50, 'categoria' => $fiambres, 'unidad' => 'kg'],
-            ['nombre' => 'PECHUGA DE PAVO GRANJA FLOR', 'precio' => 5.47, 'stock' => 50, 'categoria' => $fiambres, 'unidad' => 'kg'],
-            ['nombre' => 'MORTADELA HOSTELERIA G. FLOR', 'precio' => 3.40, 'stock' => 50, 'categoria' => $fiambres, 'unidad' => 'kg'],
+            ['nombre' => 'PATA ASADA GRANJA FLOR', 'precio' => 10.25, 'stock' => 100, 'categoria' => $fiambres, 'unidad' => 'kg'],
+            ['nombre' => 'CHORIZO TEROR', 'precio' => 5.27, 'stock' => 400, 'categoria' => $fiambres, 'unidad' => 'kg'],
+            ['nombre' => 'FIAMBRE DE CERDO PARIS', 'precio' => 3.95, 'stock' => 350, 'categoria' => $fiambres, 'unidad' => 'kg'],
+            ['nombre' => 'LOMO ADOBADO GRANJA FLOR ENTERO', 'precio' => 5.20, 'stock' => 450, 'categoria' => $fiambres, 'unidad' => 'kg'],
+            ['nombre' => 'LOMO ADOBADO GRANJA FLOR MITADES', 'precio' => 5.20, 'stock' => 450, 'categoria' => $fiambres, 'unidad' => 'kg'],
+            ['nombre' => 'BACON EXTRA GRANJA FLOR ENTERO', 'precio' => 5.60, 'stock' => 500, 'categoria' => $fiambres, 'unidad' => 'kg'],
+            ['nombre' => 'BACON EXTRA GRANJA FLOR MITADES', 'precio' => 5.60, 'stock' => 500, 'categoria' => $fiambres, 'unidad' => 'kg'],
+            ['nombre' => 'CENTRO DE JAMON SERRANO EN MITADES', 'precio' => 11.32, 'stock' => 350, 'categoria' => $fiambres, 'unidad' => 'kg'],
+            ['nombre' => 'PALETA SANDWICH 11X11', 'precio' => 4.40, 'stock' => 450, 'categoria' => $fiambres, 'unidad' => 'kg'],
+            ['nombre' => 'PECHUGA DE PAVO GRANJA FLOR', 'precio' => 5.47, 'stock' => 450, 'categoria' => $fiambres, 'unidad' => 'kg'],
+            ['nombre' => 'MORTADELA HOSTELERIA G. FLOR', 'precio' => 3.40, 'stock' => 350, 'categoria' => $fiambres, 'unidad' => 'kg'],
         ];
 
         $productosHuevos = [
@@ -70,12 +72,19 @@ class ProductoSeeder extends Seeder
             ['nombre' => 'LECHE UHT ENTERA', 'precio' => 5.7, 'stock' => 1250, 'categoria' => $lacteos, 'unidad' => 'pack x6'],
             ['nombre' => 'LECHE UHT SEMIDESNATADA', 'precio' => 5.7, 'stock' => 1250, 'categoria' => $lacteos, 'unidad' => 'pack x6'],
             ['nombre' => 'LECHE CONDENSADA 1KG', 'precio' => 17.70, 'stock' => 300, 'categoria' => $lacteos, 'unidad' => 'kg'],
+            ['nombre' => 'LECHE CONDENSADA 1KG BOCA ABAJO', 'precio' => 2.8, 'stock' => 480, 'categoria' => $lacteos, 'unidad' => 'kg'],
             ['nombre' => 'DULCE DE LECHE 5KG', 'precio' => 18.95, 'stock' => 400, 'categoria' => $lacteos, 'unidad' => 'ud'],
             ['nombre' => 'YOGURT NATURAL 10KG', 'precio' => 13.60, 'stock' => 81, 'categoria' => $lacteos, 'unidad' => 'ud'],
             ['nombre' => 'YOGURT SABORES 10KG', 'precio' => 13.60, 'stock' => 81, 'categoria' => $lacteos, 'unidad' => 'ud'],
         ];
 
-        $todos = array_merge($productos, $productosFiambres, $productosHuevos, $productosLacteos);
+        $productosOtros = [
+            ['nombre' => 'DULCE MEMBRILLO TARRINA 3,75KG', 'precio' => 6.80, 'stock' => 200, 'categoria' => $otros, 'unidad' => 'ud'],
+            ['nombre' => 'MAYONESA GRANJA FLOR CUBO 10L', 'precio' => 17.80, 'stock' => 100, 'categoria' => $otros, 'unidad' => 'ud'],
+
+        ];
+
+        $todos = array_merge($productos, $productosFiambres, $productosHuevos, $productosLacteos, $productosOtros);
 
         foreach ($todos as $prod) {
             Producto::create([

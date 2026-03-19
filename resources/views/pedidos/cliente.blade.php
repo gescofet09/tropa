@@ -2,6 +2,13 @@
 
 @section('content')
 
+<style>
+.detalle-productos-cliente.collapse,
+.detalle-productos-cliente.collapsing {
+    transition: none !important;
+}
+</style>
+
 <div class="container py-4">
 
     {{-- Card Productos --}}
@@ -16,30 +23,67 @@
                 <div class="alert alert-danger">{{ session('error') }}</div>
             @endif
 
-            {{-- Botón Crear Pedido --}}
-            <button class="btn btn-primary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#formulario-pedido" aria-expanded="false" aria-controls="formulario-pedido">
-                Crear nuevo pedido
-            </button>
+            <div class="d-flex flex-column flex-md-row gap-2 align-items-md-end mb-3">
+                <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#formulario-pedido" aria-expanded="{{ !empty($busqueda) ? 'true' : 'false' }}" aria-controls="formulario-pedido">
+                    Crear nuevo pedido
+                </button>
+
+                <form id="form-busqueda-productos" action="{{ route('pedidos') }}" method="GET" class="d-flex flex-column flex-md-row gap-2 flex-grow-1">
+                    <input
+                        type="text"
+                        id="buscar-producto"
+                        name="buscar"
+                        class="form-control"
+                        value="{{ $busqueda ?? '' }}"
+                        placeholder="Escribe el nombre del producto"
+                    >
+                    <button type="submit" class="btn btn-primary">Buscar</button>
+                    @if(!empty($busqueda))
+                        <a href="{{ route('pedidos') }}" class="btn btn-secondary">Limpiar</a>
+                    @endif
+                </form>
+            </div>
 
             {{-- Formulario de nuevo pedido --}}
-            <div class="collapse" id="formulario-pedido">
+            <div class="collapse {{ !empty($busqueda) ? 'show' : '' }}" id="formulario-pedido">
                 <div class="card card-body mb-3">
                     <form action="{{ route('pedidos.store') }}" method="POST">
                         @csrf
 
+                        @if(!empty($busqueda))
+                            <p class="text-muted small">
+                                Resultados para: <strong>{{ $busqueda }}</strong>
+                            </p>
+                        @endif
+
+                        @if($categorias->isEmpty())
+                            <div class="alert alert-warning mb-0">
+                                No se encontraron productos con esa búsqueda.
+                            </div>
+                        @endif
+
                         @foreach($categorias as $categoria)
                             <div class="mb-2">
-                                <button class="btn btn-outline-secondary w-100 text-start mb-1" type="button" data-bs-toggle="collapse" data-bs-target="#categoria-{{ $categoria->id }}">
+                                <button class="btn btn-outline-secondary w-100 text-start mb-1" type="button" data-bs-toggle="collapse" data-bs-target="#categoria-{{ $categoria->id }}" aria-expanded="{{ !empty($busqueda) ? 'true' : 'false' }}">
                                     {{ $categoria->nombre }}
                                 </button>
-                                <div class="collapse ms-3" id="categoria-{{ $categoria->id }}">
+                                <div class="collapse ms-3 {{ !empty($busqueda) ? 'show' : '' }}" id="categoria-{{ $categoria->id }}">
                                     @foreach($categoria->productos as $producto)
                                         <div class="form-check mb-2">
                                             <input class="form-check-input" type="checkbox" name="productos[{{ $producto->id }}][id]" value="{{ $producto->id }}" id="producto-{{ $producto->id }}">
                                             <label class="form-check-label" for="producto-{{ $producto->id }}">
                                                 <strong>{{ $producto->nombre }}</strong> - {{ $producto->precio }}€/{{ $producto->unidad }} - Stock: {{ $producto->stock }}
                                             </label>
-                                            <input type="number" class="form-control form-control-sm mt-1" name="productos[{{ $producto->id }}][cantidad]" min="1" max="{{ $producto->stock }}" placeholder="Cantidad" style="width:100px;">
+                                            <input
+                                                type="number"
+                                                class="form-control form-control-sm mt-1 js-cantidad-producto"
+                                                name="productos[{{ $producto->id }}][cantidad]"
+                                                min="1"
+                                                max="{{ $producto->stock }}"
+                                                placeholder="Cantidad"
+                                                style="width:100px;"
+                                                data-checkbox-id="producto-{{ $producto->id }}"
+                                            >
                                         </div>
                                     @endforeach
                                 </div>
@@ -83,7 +127,7 @@
                                     Ver Productos
                                 </button>
 
-                                <div class="collapse mt-2" id="productos-{{ $pedido->id }}">
+                                <div class="collapse mt-2 detalle-productos-cliente" id="productos-{{ $pedido->id }}">
                                     @foreach($pedido->productos as $prod)
                                         <div class="mb-1">
                                             <strong>{{ $prod->nombre }}</strong>
@@ -127,6 +171,19 @@
 
 {{-- Polling automático cada 5 segundos para actualizar estado del pedido --}}
 <script>
+document.querySelectorAll('.js-cantidad-producto').forEach(input => {
+    const checkbox = document.getElementById(input.dataset.checkboxId);
+
+    if (!checkbox) {
+        return;
+    }
+
+    input.addEventListener('input', () => {
+        const cantidad = Number(input.value);
+        checkbox.checked = Number.isFinite(cantidad) && cantidad > 0;
+    });
+});
+
 setInterval(() => {
     document.querySelectorAll('tr[data-pedido-id]').forEach(row => {
         const pedidoId = row.dataset.pedidoId;

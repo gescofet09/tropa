@@ -2,6 +2,13 @@
 
 @section('content')
 
+<style>
+.detalle-pedido.collapse,
+.detalle-pedido.collapsing {
+    transition: none !important;
+}
+</style>
+
 <div class="container py-4">
     <h2 class="mb-4">Pedidos asignados</h2>
 
@@ -28,7 +35,7 @@
             </div>
 
             {{-- Timeline de estados --}}
-            <div class="d-flex mb-3">
+            <div class="d-flex mb-3 estado-pedido">
                 @foreach($estadosTimeline as $estado)
                     @php
                         $isActive = array_search($estadoPedido, $estadosTimeline) >= array_search($estado, $estadosTimeline);
@@ -39,14 +46,17 @@
                             'entregado' => 'bg-success text-white',
                         };
                     @endphp
-                    <div class="flex-fill text-center p-1 mx-1 rounded {{ $isActive ? $color : 'bg-light text-muted' }}">
+                    <div
+                        class="flex-fill text-center p-1 mx-1 rounded {{ $isActive ? $color : 'bg-light text-muted' }}"
+                        data-estado="{{ $estado }}"
+                    >
                         {{ $labelsTimeline[$estado] }}
                     </div>
                 @endforeach
             </div>
 
             {{-- Contenido colapsable --}}
-            <div class="collapse" id="detalle-{{ $pedido->id }}">
+            <div class="collapse detalle-pedido" id="detalle-{{ $pedido->id }}">
                 <form class="form-checklist" id="form-pedido-{{ $pedido->id }}">
                     @csrf
                     @foreach($pedido->productos as $producto)
@@ -67,14 +77,14 @@
                 </form>
 
                 {{-- Botón En reparto --}}
-                @if($estadoPedido === 'preparacion')
+                <div class="accion-reparto {{ $estadoPedido === 'preparacion' ? '' : 'd-none' }}">
                     <form action="{{ route('pedidos.cambiarEstado', $pedido->id) }}" method="POST" class="mt-2">
                         @csrf
                         @method('PATCH')
                         <input type="hidden" name="estado" value="reparto">
                         <button class="btn btn-primary btn-sm">Marcar como Reparto</button>
                     </form>
-                @endif
+                </div>
 
                 {{-- Botón Entregado --}}
                 @if($estadoPedido === 'reparto')
@@ -92,10 +102,48 @@
 
 {{-- Script para actualizar productos preparados sin recargar --}}
 <script>
+function actualizarTimelineRepartidor(timeline, estadoActual) {
+    if (!timeline) {
+        return;
+    }
+
+    const estados = ['recibido', 'preparacion', 'reparto', 'entregado'];
+    const colores = {
+        recibido: ['bg-secondary', 'text-white'],
+        preparacion: ['bg-warning', 'text-dark'],
+        reparto: ['bg-info', 'text-dark'],
+        entregado: ['bg-success', 'text-white'],
+    };
+
+    const estadoNormalizado = (estadoActual || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const indiceActual = Math.max(estados.indexOf(estadoNormalizado), 0);
+
+    timeline.querySelectorAll('[data-estado]').forEach(step => {
+        const estadoStep = step.dataset.estado;
+        const indiceStep = estados.indexOf(estadoStep);
+        const esPasado = indiceStep < indiceActual;
+        const esActual = estadoStep === estadoNormalizado;
+        const clasesColor = colores[estadoStep] || [];
+
+        step.className = 'flex-fill text-center p-1 mx-1 rounded';
+
+        if (esPasado || esActual) {
+            step.classList.add(...clasesColor);
+        } else {
+            step.classList.add('bg-light', 'text-muted');
+        }
+
+        step.style.border = '';
+        step.style.fontWeight = esActual ? 'bold' : '';
+        step.style.opacity = (!esPasado && !esActual) ? '0.6' : '';
+    });
+}
+
 document.querySelectorAll('.checkbox-producto').forEach(function(checkbox){
     checkbox.addEventListener('change', function(){
         const pedidoId = this.dataset.pedidoId;
         const form = document.getElementById('form-pedido-' + pedidoId);
+        const tarjetaPedido = this.closest('.card');
         const productos = Array.from(form.querySelectorAll('.checkbox-producto:checked')).map(el => el.value);
 
         fetch(`/pedidos/${pedidoId}/marcar`, {
@@ -109,7 +157,15 @@ document.querySelectorAll('.checkbox-producto').forEach(function(checkbox){
         .then(res => res.json())
         .then(data => {
             if(data.success){
-                location.reload(); // recarga para actualizar timeline y botones
+                const timeline = tarjetaPedido.querySelector('.estado-pedido');
+                const accionReparto = tarjetaPedido.querySelector('.accion-reparto');
+
+                actualizarTimelineRepartidor(timeline, data.estado);
+
+                if (accionReparto) {
+                    const estado = (data.estado || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    accionReparto.classList.toggle('d-none', estado !== 'preparacion');
+                }
             }
         });
     });

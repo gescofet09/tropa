@@ -34,7 +34,7 @@ if ($indexActual === false) {
             $clase = $colores[$estadoItem];
             $style = '';
             if ($isCurrent) {
-                $style = 'border: 2px solid #000; font-weight: bold;';
+                $style = 'font-weight: bold;';
             }
             if (!$isPast && !$isCurrent) {
                 $style .= ' opacity: 0.6;';
