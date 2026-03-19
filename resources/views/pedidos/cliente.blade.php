@@ -2,173 +2,185 @@
 
 @section('content')
 
-<style>
-.detalle-productos-cliente.collapsing {
-    transition: height 0s ease;
-}
-</style>
+<div class="space-y-6">
+    <section class="panel" x-data="{ crearPedidoAbierto: {{ !empty($busqueda) ? 'true' : 'false' }} }">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-900">Productos</h2>
+                <p class="text-sm text-slate-500">Busca y prepara tu pedido desde aquí.</p>
+            </div>
 
-<div class="container py-4">
+            <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <button
+                    class="btn-primary"
+                    type="button"
+                    @click="crearPedidoAbierto = !crearPedidoAbierto"
+                    x-text="crearPedidoAbierto ? 'Ocultar pedido' : 'Crear nuevo pedido'"
+                ></button>
 
-    {{-- Card Productos --}}
-    <div class="card mb-4 shadow-sm">
-        <div class="card-body">
-            <h2 class="h5 mb-3">Productos</h2>
-
-            @if(session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
-            @if(session('error'))
-                <div class="alert alert-danger">{{ session('error') }}</div>
-            @endif
-
-            <div class="d-flex flex-column flex-md-row gap-2 align-items-md-end mb-3">
-                <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#formulario-pedido" aria-expanded="{{ !empty($busqueda) ? 'true' : 'false' }}" aria-controls="formulario-pedido">
-                    Crear nuevo pedido
-                </button>
-
-                <form id="form-busqueda-productos" action="{{ route('pedidos') }}" method="GET" class="d-flex flex-column flex-md-row gap-2 flex-grow-1">
+                <form id="form-busqueda-productos" action="{{ route('pedidos') }}" method="GET" class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                     <input
                         type="text"
                         id="buscar-producto"
                         name="buscar"
-                        class="form-control"
+                        class="input-base sm:w-72"
                         value="{{ $busqueda ?? '' }}"
                         placeholder="Escribe el nombre del producto"
                     >
-                    <button type="submit" class="btn btn-primary">Buscar</button>
+                    <button type="submit" class="btn-primary">Buscar</button>
                     @if(!empty($busqueda))
-                        <a href="{{ route('pedidos') }}" class="btn btn-secondary">Limpiar</a>
+                        <a href="{{ route('pedidos') }}" class="btn-secondary">Limpiar</a>
                     @endif
                 </form>
             </div>
+        </div>
 
-            {{-- Formulario de nuevo pedido --}}
-            <div class="collapse {{ !empty($busqueda) ? 'show' : '' }}" id="formulario-pedido">
-                <div class="card card-body mb-3">
-                    <form action="{{ route('pedidos.store') }}" method="POST">
-                        @csrf
+        <div class="mt-4 space-y-3">
+            @if(session('success'))
+                <div class="alert-success">{{ session('success') }}</div>
+            @endif
+            @if(session('error'))
+                <div class="alert-danger">{{ session('error') }}</div>
+            @endif
+        </div>
 
-                        @if(!empty($busqueda))
-                            <p class="text-muted small">
-                                Resultados para: <strong>{{ $busqueda }}</strong>
-                            </p>
-                        @endif
+        <div x-show="crearPedidoAbierto" class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+            <form action="{{ route('pedidos.store') }}" method="POST" class="space-y-4">
+                @csrf
 
-                        @if($categorias->isEmpty())
-                            <div class="alert alert-warning mb-0">
-                                No se encontraron productos con esa búsqueda.
-                            </div>
-                        @endif
+                @if(!empty($busqueda))
+                    <p class="text-sm text-slate-500">
+                        Resultados para: <span class="font-semibold text-slate-700">{{ $busqueda }}</span>
+                    </p>
+                @endif
 
-                        @foreach($categorias as $categoria)
-                            <div class="mb-2">
-                                <button class="btn btn-outline-secondary w-100 text-start mb-1" type="button" data-bs-toggle="collapse" data-bs-target="#categoria-{{ $categoria->id }}" aria-expanded="{{ !empty($busqueda) ? 'true' : 'false' }}">
-                                    {{ $categoria->nombre }}
-                                </button>
-                                <div class="collapse ms-3 {{ !empty($busqueda) ? 'show' : '' }}" id="categoria-{{ $categoria->id }}">
-                                    @foreach($categoria->productos as $producto)
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="productos[{{ $producto->id }}][id]" value="{{ $producto->id }}" id="producto-{{ $producto->id }}">
-                                            <label class="form-check-label" for="producto-{{ $producto->id }}">
-                                                <strong>{{ $producto->nombre }}</strong> - {{ $producto->precio }}€/{{ $producto->unidad }} - Stock: {{ $producto->stock }}
-                                            </label>
+                @if($categorias->isEmpty())
+                    <div class="alert-warning">No se encontraron productos con esa búsqueda.</div>
+                @endif
+
+                <div class="space-y-3">
+                    @foreach($categorias as $categoria)
+                        <div class="rounded-2xl border border-slate-200 bg-white" x-data="{ open: {{ !empty($busqueda) ? 'true' : 'false' }} }">
+                            <button
+                                class="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-semibold text-slate-700"
+                                type="button"
+                                @click="open = !open"
+                            >
+                                <span>{{ $categoria->nombre }}</span>
+                                <svg class="h-4 w-4 text-slate-400 transition" :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+
+                            <div x-show="open" class="space-y-3 border-t border-slate-100 px-4 py-4">
+                                @foreach($categoria->productos as $producto)
+                                    <label class="block rounded-xl border border-slate-200 p-3">
+                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div class="flex items-start gap-3">
+                                                <input
+                                                    class="mt-1 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                                                    type="checkbox"
+                                                    name="productos[{{ $producto->id }}][id]"
+                                                    value="{{ $producto->id }}"
+                                                    id="producto-{{ $producto->id }}"
+                                                >
+                                                <div>
+                                                    <p class="font-semibold text-slate-800">{{ $producto->nombre }}</p>
+                                                    <p class="text-sm text-slate-500">{{ $producto->precio }}€/{{ $producto->unidad }} · Stock: {{ $producto->stock }}</p>
+                                                </div>
+                                            </div>
+
                                             <input
                                                 type="number"
-                                                class="form-control form-control-sm mt-1 js-cantidad-producto"
+                                                class="input-base js-cantidad-producto w-full sm:w-28"
                                                 name="productos[{{ $producto->id }}][cantidad]"
                                                 min="1"
                                                 max="{{ $producto->stock }}"
                                                 placeholder="Cantidad"
-                                                style="width:100px;"
                                                 data-checkbox-id="producto-{{ $producto->id }}"
                                             >
                                         </div>
-                                    @endforeach
-                                </div>
+                                    </label>
+                                @endforeach
                             </div>
-                        @endforeach
-
-                        <button type="submit" class="btn btn-success mt-2">Realizar pedido</button>
-                    </form>
+                        </div>
+                    @endforeach
                 </div>
+
+                <button type="submit" class="btn-success">Realizar pedido</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-900">Mis pedidos</h2>
+                <p class="text-sm text-slate-500">Consulta productos, estado y factura.</p>
             </div>
         </div>
-    </div>
 
-    {{-- Mis pedidos --}}
-    <div class="card">
-        <div class="card-body">
-            <h2 class="h5 mb-3">Mis pedidos</h2>
-
-            <table class="table table-striped table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>ID</th>
-                        <th>Productos</th>
-                        <th>Seguimiento</th>
-                        <th>Documentos</th>
-
+        <div class="mt-6 overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm">
+                <thead>
+                    <tr class="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        <th class="px-4 py-3">ID</th>
+                        <th class="px-4 py-3">Productos</th>
+                        <th class="px-4 py-3">Seguimiento</th>
+                        <th class="px-4 py-3">Documentos</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-slate-200">
                     @foreach ($pedidos as $pedido)
-                        <tr data-pedido-id="{{ $pedido->id }}">
-                            <td>#{{ $pedido->id }}</td>
+                        <tr data-pedido-id="{{ $pedido->id }}" class="align-top">
+                            <td class="px-4 py-4 font-semibold text-slate-700">#{{ $pedido->id }}</td>
+                            <td class="px-4 py-4">
+                                <div x-data="{ open: false }" class="space-y-3">
+                                    <button
+                                        class="btn-primary btn-base !px-3 !py-1.5 text-xs"
+                                        type="button"
+                                        @click="open = !open"
+                                        x-text="open ? 'Ocultar productos' : 'Ver productos'"
+                                    ></button>
 
-                            {{-- Botón Ver Productos --}}
-                            <td>
-                                <button class="btn btn-primary btn-sm mb-1" type="button"
-                                        data-bs-toggle="collapse"
-                                        data-bs-target="#productos-{{ $pedido->id }}"
-                                        aria-expanded="false"
-                                        aria-controls="productos-{{ $pedido->id }}">
-                                    Ver Productos
-                                </button>
+                                    <div x-show="open" class="detalle-productos-cliente space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        @foreach($pedido->productos as $prod)
+                                            <div class="flex items-center justify-between gap-3 text-sm">
+                                                <span class="font-medium text-slate-700">{{ $prod->nombre }}</span>
+                                                <span class="text-slate-500">Cantidad {{ $prod->pivot->cantidad }}</span>
+                                            </div>
+                                        @endforeach
 
-                                <div class="collapse mt-2 detalle-productos-cliente" id="productos-{{ $pedido->id }}">
-                                    @foreach($pedido->productos as $prod)
-                                        <div class="mb-1">
-                                            <strong>{{ $prod->nombre }}</strong>
-                                            <span class="text-muted small"> - Cantidad {{ $prod->pivot->cantidad }}</span>
-                                        </div>
-                                    @endforeach
-
-                                    {{-- Repetir Pedido completo --}}
-                                    <form action="{{ route('pedidos.repetir', $pedido->id) }}" method="POST" class="mt-2">
-                                        @csrf
-                                        <button type="submit" class="btn btn-success btn-sm w-100">Repetir pedido</button>
-                                    </form>
+                                        <form action="{{ route('pedidos.repetir', $pedido->id) }}" method="POST" class="pt-2">
+                                            @csrf
+                                            <button type="submit" class="btn-success w-full">Repetir pedido</button>
+                                        </form>
+                                    </div>
                                 </div>
                             </td>
-
-                            {{-- Timeline --}}
-                            <td class="estado-pedido">
+                            <td class="estado-pedido px-4 py-4">
                                 <x-estado-pedido :estado="$pedido->estado" />
                             </td>
-
-                            {{-- Factura --}}
-                            <td class="text-center">
+                            <td class="px-4 py-4 text-center">
                                 @if($pedido->factura && $pedido->factura->archivoPDF)
-                                    <a href="{{ asset($pedido->factura->archivoPDF) }}" target="_blank" class="btn btn-sm btn-primary" title="Ver Factura">
-                                        <i class="bi bi-file-earmark-pdf-fill"></i>
+                                    <a href="{{ asset($pedido->factura->archivoPDF) }}" target="_blank" class="btn-primary inline-flex gap-2" title="Ver factura">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <path d="M7.5 3A1.5 1.5 0 006 4.5v15A1.5 1.5 0 007.5 21h9a1.5 1.5 0 001.5-1.5v-11.38a1.5 1.5 0 00-.44-1.06l-3.62-3.62A1.5 1.5 0 0012.88 3H7.5zm5.25 1.5v3a.75.75 0 00.75.75h3l-3.75-3.75z" />
+                                        </svg>
+                                        Factura
                                     </a>
+                                @else
+                                    <span class="text-sm text-slate-400">Sin factura</span>
                                 @endif
                             </td>
-
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
-    </div>
-
+    </section>
 </div>
 
-{{-- Bootstrap JS --}}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-{{-- Polling automático cada 5 segundos para actualizar estado del pedido --}}
 <script>
 document.querySelectorAll('.js-cantidad-producto').forEach(input => {
     const checkbox = document.getElementById(input.dataset.checkboxId);
@@ -181,6 +193,12 @@ document.querySelectorAll('.js-cantidad-producto').forEach(input => {
         const cantidad = Number(input.value);
         checkbox.checked = Number.isFinite(cantidad) && cantidad > 0;
     });
+
+    checkbox.addEventListener('change', () => {
+        if (!checkbox.checked) {
+            input.value = '';
+        }
+    });
 });
 
 setInterval(() => {
@@ -190,7 +208,7 @@ setInterval(() => {
         fetch(`/pedidos/${pedidoId}/documentos`)
             .then(res => res.json())
             .then(data => {
-                if(data.estado_html){
+                if (data.estado_html) {
                     row.querySelector('.estado-pedido').innerHTML = data.estado_html;
                 }
             });

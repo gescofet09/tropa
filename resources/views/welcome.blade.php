@@ -2,43 +2,36 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>TROPA - Gestión de pedidos</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-light">
+<body class="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+    <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60">
+        <div class="mb-6 text-center">
+            <h1 class="text-3xl font-semibold tracking-wide text-slate-900">TROPA</h1>
+            <p class="mt-2 text-sm text-slate-500">Gestión de pedidos y reparto</p>
+        </div>
 
-<div class="container vh-100 d-flex justify-content-center align-items-center">
-    <div class="card shadow p-4" style="width: 400px;">
-        
-        <h2 class="text-center mb-3">TROPA</h2>
-        <p class="text-center text-muted">Gestión de pedidos y reparto</p>
-        <form method="POST" action="{{ route('login.submit') }}">
+        <form method="POST" action="{{ route('login.submit') }}" class="space-y-5">
             @csrf
 
             @if ($errors->any())
-                <div class="alert alert-danger">
-                    {{ $errors->first() }}
-                </div>
+                <div class="alert-danger">{{ $errors->first() }}</div>
             @endif
 
-            <div class="mb-3">
-                <label>Email</label>
-                <input type="email" name="email" class="form-control" required>
+            <div class="space-y-2">
+                <label for="email" class="text-sm font-medium text-slate-700">Email</label>
+                <input id="email" type="email" name="email" class="input-base" required>
             </div>
 
-            <div class="mb-3">
-                <label>Contraseña</label>
-                <input type="password" name="password" class="form-control" required>
+            <div class="space-y-2">
+                <label for="password" class="text-sm font-medium text-slate-700">Contraseña</label>
+                <input id="password" type="password" name="password" class="input-base" required>
             </div>
 
-            <button class="btn btn-primary w-100">Entrar</button>
+            <button class="btn-primary w-full" type="submit">Entrar</button>
         </form>
-
-        <hr>
-
     </div>
-</div>
-
 </body>
 </html>

@@ -2,83 +2,74 @@
 
 @section('content')
 
-<div class="container py-4">
+<div class="space-y-6">
+    <section class="panel">
+        <h2 class="text-lg font-semibold text-slate-900">Panel de administración</h2>
+        <p class="mt-1 text-sm text-slate-500">Total pedidos: {{ $pedidos->count() }}</p>
+    </section>
 
-    {{-- Card de resumen --}}
-    <div class="card mb-4 shadow-sm">
-        <div class="card-body">
-            <h2 class="h5">Panel de administración</h2>
-            <p>Total pedidos: {{ $pedidos->count() }}</p>
+    <section class="panel">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-semibold text-slate-900">Todos los pedidos</h3>
+                <p class="text-sm text-slate-500">Supervisión completa de clientes, repartidores y estados.</p>
+            </div>
         </div>
-    </div>
 
-    {{-- Tabla de pedidos --}}
-    <div class="card mb-4 shadow-sm">
-        <div class="card-body">
-            <h3 class="h5 mb-3">Todos los pedidos</h3>
-
-            <table class="table table-striped table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>ID</th>
-                        <th>Cliente</th>
-                        <th>Repartidor</th>
-                        <th>Seguimiento</th>
-                        <th>Acciones</th>
+        <div class="mt-6 overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm">
+                <thead>
+                    <tr class="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        <th class="px-4 py-3">ID</th>
+                        <th class="px-4 py-3">Cliente</th>
+                        <th class="px-4 py-3">Repartidor</th>
+                        <th class="px-4 py-3">Seguimiento</th>
+                        <th class="px-4 py-3">Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-slate-200">
                     @foreach ($pedidos as $pedido)
-                        <tr data-pedido-id="{{ $pedido->id }}">
-                            <td>#{{ $pedido->id }}</td>
-                            <td>{{ $pedido->cliente->name ?? 'Sin cliente' }}</td>
-                            <td>{{ $pedido->repartidor->name ?? 'Sin asignar' }}</td>
-                            <td class="estado-pedido"><x-estado-pedido :estado="$pedido->estado" /></td>
-                            <td class="d-flex gap-2">
-                                {{-- Botón Ver Pedido --}}
-                                <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#detalle-{{ $pedido->id }}" aria-expanded="false" aria-controls="detalle-{{ $pedido->id }}">
-                                    Ver Pedido
-                                </button>
+                        <tr data-pedido-id="{{ $pedido->id }}" class="align-top" x-data="{ open: false }">
+                            <td class="px-4 py-4 font-semibold text-slate-700">#{{ $pedido->id }}</td>
+                            <td class="px-4 py-4 text-slate-600">{{ $pedido->cliente->name ?? 'Sin cliente' }}</td>
+                            <td class="px-4 py-4 text-slate-600">{{ $pedido->repartidor->name ?? 'Sin asignar' }}</td>
+                            <td class="estado-pedido px-4 py-4"><x-estado-pedido :estado="$pedido->estado" /></td>
+                            <td class="px-4 py-4">
+                                <div class="flex flex-wrap gap-2">
+                                    <button class="btn-primary" type="button" @click="open = !open" x-text="open ? 'Ocultar pedido' : 'Ver pedido'"></button>
 
-                                {{-- Botón Eliminar --}}
-                                <form action="{{ route('pedidos.destroy', $pedido->id) }}" method="POST">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
-                                </form>
-                            </td>
-                        </tr>
+                                    <form action="{{ route('pedidos.destroy', $pedido->id) }}" method="POST">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn-danger" type="submit">Eliminar</button>
+                                    </form>
+                                </div>
 
-                        {{-- Fila de detalles --}}
-                        <tr class="collapse" id="detalle-{{ $pedido->id }}">
-                            <td colspan="6">
-                                <div class="p-3 bg-light rounded">
+                                <div x-show="open" class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                                     @foreach ($categorias as $categoria)
                                         @php
                                             $productosCategoria = $pedido->productos->where('categoria_id', $categoria->id);
                                         @endphp
                                         @if($productosCategoria->isNotEmpty())
-                                            <h6>{{ $categoria->nombre }}</h6>
-                                            <ul class="mb-2">
-                                                @foreach ($productosCategoria as $producto)
-                                                    <li>{{ $producto->nombre }} - Cantidad: {{ $producto->pivot->cantidad }}</li>
-                                                @endforeach
-                                            </ul>
+                                            <div class="mb-4 last:mb-0">
+                                                <h4 class="font-semibold text-slate-800">{{ $categoria->nombre }}</h4>
+                                                <ul class="mt-2 space-y-1 text-sm text-slate-600">
+                                                    @foreach ($productosCategoria as $producto)
+                                                        <li>{{ $producto->nombre }} - Cantidad: {{ $producto->pivot->cantidad }}</li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
                                         @endif
                                     @endforeach
                                 </div>
                             </td>
                         </tr>
-
                     @endforeach
                 </tbody>
             </table>
         </div>
-    </div>
+    </section>
 </div>
-
-{{-- Bootstrap JS para collapse --}}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
 setInterval(() => {

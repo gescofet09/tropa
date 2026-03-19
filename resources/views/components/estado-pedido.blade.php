@@ -1,14 +1,13 @@
 @props(['estado'])
 
 @php
-// Normalizamos sin acentos para evitar inconsistencias (preparacion/preparación).
 $estados = ['recibido', 'preparacion', 'reparto', 'entregado'];
 
 $colores = [
-    'recibido' => 'bg-secondary text-white',
-    'preparacion' => 'bg-warning text-dark',
-    'reparto' => 'bg-info text-dark',
-    'entregado' => 'bg-success text-white',
+    'recibido' => 'bg-slate-500 text-white',
+    'preparacion' => 'bg-amber-400 text-slate-900',
+    'reparto' => 'bg-sky-400 text-slate-900',
+    'entregado' => 'bg-emerald-500 text-white',
 ];
 
 $labels = [
@@ -25,12 +24,12 @@ if ($indexActual === false) {
 }
 @endphp
 
-<div class="d-flex justify-content-between align-items-center">
+<div class="flex flex-wrap items-center gap-2">
     @foreach ($estados as $estadoItem)
         @php
             $indexItem = array_search($estadoItem, $estados, true);
-            $isPast = $indexItem < $indexActual;   // pasos completados
-            $isCurrent = $estadoItem === $estadoActual; // paso actual
+            $isPast = $indexItem < $indexActual;
+            $isCurrent = $estadoItem === $estadoActual;
             $clase = $colores[$estadoItem];
             $style = '';
             if ($isCurrent) {
@@ -41,7 +40,7 @@ if ($indexActual === false) {
             }
         @endphp
 
-        <div class="step px-3 py-1 rounded text-center {{ $clase }}" style="{{ $style }}; min-width: 100px;">
+        <div class="min-w-[110px] rounded-full px-4 py-2 text-center text-xs font-medium sm:text-sm {{ $isPast || $isCurrent ? $clase : 'bg-slate-200 text-slate-500' }}" style="{{ $style }}">
             {{ $labels[$estadoItem] }}
         </div>
     @endforeach
