@@ -14,11 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class PedidoController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | LISTADO SEGÚN ROL
-    |--------------------------------------------------------------------------
-    */
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -66,11 +62,8 @@ class PedidoController extends Controller
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | CREAR PEDIDO (CLIENTE)
-    |--------------------------------------------------------------------------
-    */
+    //* Crear pedido (cliente)
+
     public function store(Request $request)
     {
         $user = Auth::user();
@@ -132,11 +125,7 @@ class PedidoController extends Controller
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | MARCAR PRODUCTOS (REPARTIDOR)
-    |--------------------------------------------------------------------------
-    */
+    //* marcar productos preparados (repartidor)
     public function marcarProductos(Request $request, Pedido $pedido)
     {
         $user = Auth::user();
@@ -171,11 +160,7 @@ class PedidoController extends Controller
 
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | CAMBIAR ESTADO (REPARTIDOR / ADMIN)
-    |--------------------------------------------------------------------------
-    */
+    //? cambiar estado (repartidor/admin)
     public function cambiarEstado(Request $request, Pedido $pedido)
     {
         $user = Auth::user();
@@ -195,9 +180,7 @@ class PedidoController extends Controller
         $pedido->estado = $nuevoEstado;
         $pedido->save();
 
-        // ======================
-        // ALBARÁN
-        // ======================
+        //* Albarán 
         if (\Illuminate\Support\Str::slug((string) $nuevoEstado, '') === 'preparacion') {
 
             // Crear registro de albarán
@@ -223,9 +206,7 @@ class PedidoController extends Controller
             $albaran->save();
         }
 
-        // ======================
-        // FACTURA
-        // ======================
+        //* factura
         if ($nuevoEstado === 'entregado') {
 
             // Crear registro de factura
@@ -258,11 +239,7 @@ class PedidoController extends Controller
 
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | ELIMINAR PEDIDO (ADMIN)
-    |--------------------------------------------------------------------------
-    */
+    //todo ELIMINAR pedido (admin)
     public function destroy(Pedido $pedido)
     {
         $user = Auth::user();
@@ -278,11 +255,7 @@ class PedidoController extends Controller
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | VER DOCUMENTOS
-    |--------------------------------------------------------------------------
-    */
+    //? ver Documentos
     public function verDocumentos(Pedido $pedido)
     {
         $user = Auth::user();

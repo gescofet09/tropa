@@ -3,9 +3,8 @@
 @section('content')
 
 <style>
-.detalle-pedido.collapse,
 .detalle-pedido.collapsing {
-    transition: none !important;
+    transition: height 0s ease;
 }
 </style>
 

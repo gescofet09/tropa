@@ -3,9 +3,8 @@
 @section('content')
 
 <style>
-.detalle-productos-cliente.collapse,
 .detalle-productos-cliente.collapsing {
-    transition: none !important;
+    transition: height 0s ease;
 }
 </style>
 
