@@ -216,23 +216,38 @@
 </div>
 
 <script>
-document.querySelectorAll('.js-cantidad-producto').forEach(input => {
+document.addEventListener('input', event => {
+    if (!event.target.classList.contains('js-cantidad-producto')) {
+        return;
+    }
+
+    const input = event.target;
     const checkbox = document.getElementById(input.dataset.checkboxId);
 
     if (!checkbox) {
         return;
     }
 
-    input.addEventListener('input', () => {
-        const cantidad = Number(input.value);
-        checkbox.checked = Number.isFinite(cantidad) && cantidad > 0;
-    });
+    const cantidad = Number(input.value);
+    checkbox.checked = Number.isFinite(cantidad) && cantidad > 0;
+});
 
-    checkbox.addEventListener('change', () => {
-        if (!checkbox.checked) {
-            input.value = '';
-        }
-    });
+document.addEventListener('change', event => {
+    if (!event.target.matches('input[type="checkbox"][id^="producto-"]')) {
+        return;
+    }
+
+    const checkbox = event.target;
+
+    if (checkbox.checked) {
+        return;
+    }
+
+    const input = document.querySelector(`.js-cantidad-producto[data-checkbox-id="${checkbox.id}"]`);
+
+    if (input) {
+        input.value = '';
+    }
 });
 
 setInterval(() => {

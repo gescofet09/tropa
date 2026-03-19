@@ -20,7 +20,7 @@
             ];
         @endphp
 
-        <article class="panel" x-data="{ open: false }" @keydown.escape.window="open = false">
+        <article class="panel" data-pedido-id="{{ $pedido->id }}" x-data="{ open: false }" @keydown.escape.window="open = false">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div class="space-y-4">
                     <div>
@@ -150,35 +150,44 @@ function actualizarTimelineRepartidor(timeline, estadoActual) {
     });
 }
 
-document.querySelectorAll('.checkbox-producto').forEach(checkbox => {
-    checkbox.addEventListener('change', function () {
-        const pedidoId = this.dataset.pedidoId;
-        const form = document.getElementById(`form-pedido-${pedidoId}`);
-        const tarjetaPedido = this.closest('article');
-        const productos = Array.from(form.querySelectorAll('.checkbox-producto:checked')).map(el => el.value);
+document.addEventListener('change', event => {
+    if (!event.target.classList.contains('checkbox-producto')) {
+        return;
+    }
 
-        fetch(`/pedidos/${pedidoId}/marcar`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ productos })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const timeline = tarjetaPedido.querySelector('.estado-pedido');
-                const accionReparto = tarjetaPedido.querySelector('.accion-reparto');
-                const estado = (data.estado || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const checkbox = event.target;
+    const pedidoId = checkbox.dataset.pedidoId;
+    const form = document.getElementById(`form-pedido-${pedidoId}`);
 
-                actualizarTimelineRepartidor(timeline, data.estado);
+    if (!form) {
+        return;
+    }
 
-                if (accionReparto) {
-                    accionReparto.classList.toggle('hidden', estado !== 'preparacion');
-                }
+    const tarjetaPedido = document.querySelector(`article[data-pedido-id="${pedidoId}"]`);
+    const contenedorModal = form.closest('.modal-panel');
+    const productos = Array.from(form.querySelectorAll('.checkbox-producto:checked')).map(el => el.value);
+
+    fetch(`/pedidos/${pedidoId}/marcar`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ productos })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const timeline = tarjetaPedido?.querySelector('.estado-pedido');
+            const accionReparto = contenedorModal?.querySelector('.accion-reparto');
+            const estado = (data.estado || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+            actualizarTimelineRepartidor(timeline, data.estado);
+
+            if (accionReparto) {
+                accionReparto.classList.toggle('hidden', estado !== 'preparacion');
             }
-        });
+        }
     });
 });
 </script>
