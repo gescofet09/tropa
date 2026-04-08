@@ -18,7 +18,6 @@ class PedidoController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $busqueda = trim((string) $request->query('buscar', ''));
 
         // ADMIN
         if ($user->esAdmin()) {
@@ -44,20 +43,13 @@ class PedidoController extends Controller
                 ->get();
 
             $categorias = Categoria::query()
-                ->when($busqueda !== '', function ($query) use ($busqueda) {
-                    $query->whereHas('productos', function ($productoQuery) use ($busqueda) {
-                        $productoQuery->where('nombre', 'like', '%'.$busqueda.'%');
-                    });
-                })
-                ->with(['productos' => function ($query) use ($busqueda) {
-                    $query->when($busqueda !== '', function ($productoQuery) use ($busqueda) {
-                        $productoQuery->where('nombre', 'like', '%'.$busqueda.'%');
-                    })->orderBy('nombre');
+                ->with(['productos' => function ($query) {
+                    $query->orderBy('nombre');
                 }])
                 ->orderBy('nombre')
                 ->get();
 
-            return view('pedidos.cliente', compact('pedidos', 'categorias', 'busqueda'));
+            return view('pedidos.cliente', compact('pedidos', 'categorias'));
         }
     }
 

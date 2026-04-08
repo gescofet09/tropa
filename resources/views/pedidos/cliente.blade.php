@@ -3,7 +3,7 @@
 @section('content')
 
 <div class="space-y-6">
-    <section class="panel" x-data="{ crearPedidoAbierto: {{ !empty($busqueda) ? 'true' : 'false' }} }" @keydown.escape.window="crearPedidoAbierto = false">
+    <section class="panel" x-data="{ crearPedidoAbierto: false }" @keydown.escape.window="crearPedidoAbierto = false">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <h2 class="text-lg font-semibold text-slate-900">Productos</h2>
@@ -17,21 +17,6 @@
                     @click="crearPedidoAbierto = true"
                     x-text="'Crear nuevo pedido'"
                 ></button>
-
-                <form id="form-busqueda-productos" action="{{ route('pedidos') }}" method="GET" class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                    <input
-                        type="text"
-                        id="buscar-producto"
-                        name="buscar"
-                        class="input-base sm:w-72"
-                        value="{{ $busqueda ?? '' }}"
-                        placeholder="Escribe el nombre del producto"
-                    >
-                    <button type="submit" class="btn-primary">Buscar</button>
-                    @if(!empty($busqueda))
-                        <a href="{{ route('pedidos') }}" class="btn-secondary">Limpiar</a>
-                    @endif
-                </form>
             </div>
         </div>
 
@@ -48,32 +33,96 @@
             <div x-show="crearPedidoAbierto" x-cloak>
                 <div class="modal-overlay" @click="crearPedidoAbierto = false"></div>
 
-                <div class="modal-panel max-h-[85vh] overflow-y-auto" @click.stop>
+                <div
+                    class="modal-panel max-h-[85vh] overflow-y-auto"
+                    @click.stop
+                    x-data="{
+                        busquedaProducto: '',
+                        normalizar(valor) {
+                            return (valor || '').toLowerCase().trim();
+                        },
+                        productoCoincide(nombre) {
+                            const termino = this.normalizar(this.busquedaProducto);
+                            return termino === '' || this.normalizar(nombre).includes(termino);
+                        },
+                        categoriaCoincide(productos) {
+                            return productos.some((producto) => this.productoCoincide(producto));
+                        },
+                        busquedaActiva() {
+                            return this.normalizar(this.busquedaProducto) !== '';
+                        },
+                        hayResultados() {
+                            return this.categoriaCoincide([
+                                @foreach($categorias as $categoria)
+                                    @foreach($categoria->productos as $producto)
+                                        '{{ addslashes($producto->nombre) }}',
+                                    @endforeach
+                                @endforeach
+                            ]);
+                        }
+                    }"
+                >
                     <div class="modal-header">
                         <div>
                             <h3 class="text-lg font-semibold text-slate-900">Crear nuevo pedido</h3>
-                            <p class="text-sm text-slate-500">Selecciona productos y cantidades.</p>
+                            <p class="text-sm text-slate-500">Busca, selecciona varios productos y define las cantidades.</p>
                         </div>
 
                         <button class="btn-secondary" type="button" @click="crearPedidoAbierto = false">Cerrar</button>
                     </div>
 
-                    <form action="{{ route('pedidos.store') }}" method="POST" class="space-y-4">
-                @csrf
+                    <form action="{{ route('pedidos.store') }}" method="POST" class="space-y-4" @keydown.enter.prevent>
+                        @csrf
 
-                        @if(!empty($busqueda))
-                            <p class="text-sm text-slate-500">
-                                Resultados para: <span class="font-semibold text-slate-700">{{ $busqueda }}</span>
-                            </p>
-                        @endif
+                        <div class="space-y-2">
+                            <label for="buscar-producto-modal" class="text-sm font-medium text-slate-700">Buscar producto</label>
+                            <div class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 shadow-sm transition">
+                                <input
+                                    type="text"
+                                    id="buscar-producto-modal"
+                                    class="min-w-0 flex-1 appearance-none !border-0 bg-transparent py-3 text-sm text-slate-900 !outline-none !ring-0 !shadow-none focus:!border-0 focus:!outline-none focus:!ring-0 focus:!shadow-none focus-visible:!outline-none focus-visible:!ring-0"
+                                    style="-webkit-appearance: none; border: 0; outline: none; box-shadow: none;"
+                                    x-model.trim="busquedaProducto"
+                                    placeholder="Escribe el nombre del producto"
+                                    autocomplete="off"
+                                    autocorrect="off"
+                                    autocapitalize="none"
+                                    spellcheck="false"
+                                >
+
+                                <button
+                                    type="button"
+                                    class="inline-flex h-5 w-5 shrink-0 items-center justify-center text-slate-500 transition hover:text-slate-900 focus:outline-none"
+                                    x-show="busquedaProducto !== ''"
+                                    x-cloak
+                                    @click="busquedaProducto = ''; $nextTick(() => document.getElementById('buscar-producto-modal')?.focus())"
+                                    aria-label="Limpiar búsqueda"
+                                >
+                                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M4.22 4.22a.75.75 0 011.06 0L10 8.94l4.72-4.72a.75.75 0 111.06 1.06L11.06 10l4.72 4.72a.75.75 0 11-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 11-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 010-1.06z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
 
                         @if($categorias->isEmpty())
-                            <div class="alert-warning">No se encontraron productos con esa búsqueda.</div>
+                            <div class="alert-warning">No hay productos disponibles ahora mismo.</div>
                         @endif
 
                         <div class="space-y-3">
                             @foreach($categorias as $categoria)
-                                <div class="rounded-2xl border border-slate-200 bg-white" x-data="{ open: {{ !empty($busqueda) ? 'true' : 'false' }} }">
+                                <div
+                                    class="rounded-2xl border border-slate-200 bg-white"
+                                    x-data='{
+                                        open: false,
+                                        productos: @json($categoria->productos->pluck("nombre")->values()),
+                                        coincideCategoria() {
+                                            return categoriaCoincide(this.productos);
+                                        }
+                                    }'
+                                    x-show="coincideCategoria()"
+                                    x-effect="open = busquedaActiva() && coincideCategoria()"
+                                >
                                     <button
                                         class="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-semibold text-slate-700"
                                         type="button"
@@ -87,7 +136,11 @@
 
                                     <div x-show="open" class="space-y-3 border-t border-slate-100 px-4 py-4">
                                         @foreach($categoria->productos as $producto)
-                                            <label class="block rounded-xl border border-slate-200 p-3">
+                                            <label
+                                                class="block rounded-xl border border-slate-200 p-3"
+                                                data-producto-nombre="{{ mb_strtolower($producto->nombre) }}"
+                                                x-show="productoCoincide($el.dataset.productoNombre)"
+                                            >
                                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                                     <div class="flex items-start gap-3">
                                                         <input
@@ -118,6 +171,13 @@
                                     </div>
                                 </div>
                             @endforeach
+                        </div>
+
+                        <div
+                            class="alert-warning"
+                            x-show="busquedaProducto !== '' && !hayResultados()"
+                        >
+                            No se encontraron productos con esa búsqueda.
                         </div>
 
                         <div class="flex justify-end">
