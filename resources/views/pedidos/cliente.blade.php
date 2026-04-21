@@ -34,6 +34,21 @@
             data-store-url="{{ route('pedidos.store') }}"
             data-csrf-token="{{ csrf_token() }}"
         ></div>
+
+        <div class="mt-4 space-y-3">
+            @if(session('success'))
+                <div
+                    x-data="{ visible: true }"
+                    x-init="setTimeout(() => visible = false, 2000)"
+                    x-show="visible"
+                    x-transition.opacity.duration.250ms
+                    class="px-4 py-3 text-sm"
+                    style="background-color: #d1fae5; border: 1px solid #a7f3d0; color: #047857; border-radius: 0.75rem;"
+                >
+                    {{ session('success') }}
+                </div>
+            @endif
+        </div>
     </section>
 
     <section class="panel">
@@ -51,7 +66,7 @@
                         <th class="px-4 py-3">ID</th>
                         <th class="px-4 py-3">Productos</th>
                         <th class="px-4 py-3">Seguimiento</th>
-                        <th class="px-4 py-3">Documentos</th>
+                        <th class="px-4 py-3 text-center align-middle">Documentos</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200">
@@ -102,7 +117,7 @@
                             <td class="estado-pedido px-4 py-4">
                                 <x-estado-pedido :estado="$pedido->estado" />
                             </td>
-                            <td class="px-4 py-4 text-center">
+                            <td class="px-4 py-4 text-center align-middle">
                                 @if($pedido->factura && $pedido->factura->archivoPDF)
                                     <a href="{{ asset($pedido->factura->archivoPDF) }}" target="_blank" class="btn-primary inline-flex gap-2" title="Ver factura">
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
