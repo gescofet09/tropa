@@ -8,8 +8,11 @@ use App\Models\Categoria;
 use App\Models\Albaran;
 use App\Models\Factura;
 use App\Models\User;
+use App\Models\Zona;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class PedidoController extends Controller
@@ -21,10 +24,40 @@ class PedidoController extends Controller
 
         // ADMIN
         if ($user->esAdmin()) {
-            $pedidos = Pedido::with('cliente', 'repartidor', 'productos', 'factura', 'albaran')->get();
-            $categorias = Categoria::all();
+            $pedidos = Pedido::with('cliente', 'repartidor', 'productos.categoria', 'factura', 'albaran')
+                ->latest()
+                ->get();
 
-            return view('pedidos.admin', compact('pedidos', 'categorias'));
+            $categorias = Categoria::withCount('productos')
+                ->orderBy('nombre')
+                ->get();
+
+            $productos = Producto::with('categoria')
+                ->orderBy('nombre')
+                ->get();
+
+            $usuarios = User::with('zona')
+                ->orderByRaw("
+                    CASE
+                        WHEN rol = 'admin' THEN 1
+                        WHEN rol = 'repartidor' THEN 2
+                        ELSE 3
+                    END
+                ")
+                ->orderBy('name')
+                ->get();
+
+            $zonas = Zona::orderBy('nombre')->get();
+
+            $stats = [
+                'usuarios' => $usuarios->count(),
+                'productos' => $productos->count(),
+                'pedidos' => $pedidos->count(),
+                'stock_bajo' => $productos->where('stock', '<=', 5)->count(),
+                'ventas_totales' => $pedidos->sum('total'),
+            ];
+
+            return view('pedidos.admin', compact('pedidos', 'categorias', 'productos', 'usuarios', 'zonas', 'stats'));
         }
 
         // REPARTIDOR
@@ -294,6 +327,129 @@ class PedidoController extends Controller
 
         return back()->with('success', 'Pedido repetido correctamente');
     }
-    
+
+    public function storeUsuario(Request $request)
+    {
+        $this->authorizeAdmin();
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:usuarios,email'],
+            'password' => ['required', 'string', 'min:8'],
+            'rol' => ['required', Rule::in(['cliente', 'repartidor', 'admin'])],
+            'zona_id' => ['nullable', 'exists:zonas,id'],
+        ]);
+
+        $data['password'] = Hash::make($data['password']);
+
+        User::create($data);
+
+        return back()->with('success', 'Usuario creado correctamente');
+    }
+
+    public function updateUsuario(Request $request, User $user)
+    {
+        $this->authorizeAdmin();
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('usuarios', 'email')->ignore($user->id)],
+            'password' => ['nullable', 'string', 'min:8'],
+            'rol' => ['required', Rule::in(['cliente', 'repartidor', 'admin'])],
+            'zona_id' => ['nullable', 'exists:zonas,id'],
+        ]);
+
+        if (Auth::id() === $user->id && $data['rol'] !== 'admin') {
+            return back()->with('error', 'No puedes quitarte el rol de administrador.');
+        }
+
+        if (empty($data['password'])) {
+            unset($data['password']);
+        } else {
+            $data['password'] = Hash::make($data['password']);
+        }
+
+        $user->update($data);
+
+        return back()->with('success', 'Usuario actualizado correctamente');
+    }
+
+    public function destroyUsuario(User $user)
+    {
+        $this->authorizeAdmin();
+
+        if (Auth::id() === $user->id) {
+            return back()->with('error', 'No puedes eliminar tu propio usuario.');
+        }
+
+        $user->delete();
+
+        return back()->with('success', 'Usuario eliminado correctamente');
+    }
+
+    public function storeProducto(Request $request)
+    {
+        $this->authorizeAdmin();
+
+        $data = $request->validate([
+            'nombre' => ['required', 'string', 'max:255'],
+            'categoria_id' => ['required', 'exists:categorias,id'],
+            'precio' => ['required', 'numeric', 'min:0'],
+            'stock' => ['required', 'integer', 'min:0'],
+            'unidad' => ['required', 'string', 'max:30'],
+        ]);
+
+        Producto::create($data);
+
+        return back()->with('success', 'Producto creado correctamente');
+    }
+
+    public function updateProducto(Request $request, Producto $producto)
+    {
+        $this->authorizeAdmin();
+
+        $data = $request->validate([
+            'nombre' => ['required', 'string', 'max:255'],
+            'categoria_id' => ['required', 'exists:categorias,id'],
+            'precio' => ['required', 'numeric', 'min:0'],
+            'stock' => ['required', 'integer', 'min:0'],
+            'unidad' => ['required', 'string', 'max:30'],
+        ]);
+
+        $producto->update($data);
+
+        return back()->with('success', 'Producto actualizado correctamente');
+    }
+
+    public function updateStock(Request $request, Producto $producto)
+    {
+        $this->authorizeAdmin();
+
+        $data = $request->validate([
+            'stock' => ['required', 'integer', 'min:0'],
+        ]);
+
+        $producto->update($data);
+
+        return back()->with('success', 'Stock actualizado correctamente');
+    }
+
+    public function destroyProducto(Producto $producto)
+    {
+        $this->authorizeAdmin();
+
+        if ($producto->pedidos()->exists()) {
+            return back()->with('error', 'No puedes eliminar un producto que ya forma parte de pedidos.');
+        }
+
+        $producto->delete();
+
+        return back()->with('success', 'Producto eliminado correctamente');
+    }
+
+    private function authorizeAdmin(): void
+    {
+        abort_unless(Auth::check() && Auth::user()->esAdmin(), 403);
+    }
 
 }

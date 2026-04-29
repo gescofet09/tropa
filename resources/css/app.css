@@ -21,6 +21,14 @@
         @apply rounded-2xl border border-slate-200 bg-white p-6 shadow-sm;
     }
 
+    .admin-stats-grid {
+        @apply grid gap-4;
+    }
+
+    .admin-create-grid {
+        @apply grid gap-6;
+    }
+
     .btn-base {
         @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
     }
@@ -71,5 +79,17 @@
 
     .modal-header {
         @apply mb-5 flex items-start justify-between gap-4 border-b border-slate-200 pb-4;
+    }
+}
+
+@screen lg {
+    @layer components {
+        .admin-stats-grid {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
+        .admin-create-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
 }

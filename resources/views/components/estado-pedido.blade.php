@@ -24,7 +24,7 @@ if ($indexActual === false) {
 }
 @endphp
 
-<div class="flex flex-wrap items-center gap-2">
+<div class="flex flex-nowrap items-center gap-2 whitespace-nowrap">
     @foreach ($estados as $estadoItem)
         @php
             $indexItem = array_search($estadoItem, $estados, true);
@@ -40,7 +40,7 @@ if ($indexActual === false) {
             }
         @endphp
 
-        <div class="min-w-[110px] rounded-full px-4 py-2 text-center text-xs font-medium sm:text-sm {{ $isPast || $isCurrent ? $clase : 'bg-slate-200 text-slate-500' }}" style="{{ $style }}">
+        <div class="shrink-0 rounded-full px-3 py-2 text-center text-xs font-medium sm:px-4 sm:text-sm {{ $isPast || $isCurrent ? $clase : 'bg-slate-200 text-slate-500' }}" style="{{ $style }}">
             {{ $labels[$estadoItem] }}
         </div>
     @endforeach
