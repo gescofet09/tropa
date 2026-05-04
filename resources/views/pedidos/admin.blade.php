@@ -37,24 +37,26 @@
         @endphp
 
     <div class="space-y-6">
-        @if (session('success'))
-            <div class="alert-success">{{ session('success') }}</div>
-        @endif
+        <div>
+            @if (session('success'))
+                <div class="alert-success">{{ session('success') }}</div>
+            @endif
 
-        @if (session('error'))
-            <div class="alert-danger">{{ session('error') }}</div>
-        @endif
+            @if (session('error'))
+                <div class="alert-danger">{{ session('error') }}</div>
+            @endif
 
-        @if ($errors->any())
-            <div class="alert-danger">
-                <p class="font-semibold">Revisa los datos enviados.</p>
-                <ul class="mt-2 list-disc pl-5">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
+            @if ($errors->any())
+                <div class="alert-danger">
+                    <p class="font-semibold">Revisa los datos enviados.</p>
+                    <ul class="mt-2 list-disc pl-5">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+        </div>
 
         @php
             $usuariosPorRol = [
@@ -90,7 +92,7 @@
                     </p>
                 </div>
 
-                <div class="admin-stats-grid">
+                <div class="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
                     @foreach ($statsCards as $card)
                         @php
                             $toneClasses = match ($card['tone']) {
@@ -146,7 +148,7 @@
             </div>
         </section>
 
-        <section class="admin-create-grid">
+        <section class="grid gap-6 lg:grid-cols-2">
             <div class="panel !rounded-[24px] !p-4 sm:!p-6 lg:!p-7">
                 <div class="flex items-start gap-3 sm:gap-4">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-50 text-sky-600 sm:h-12 sm:w-12">
@@ -342,7 +344,7 @@
                                                         <form id="user-update-{{ $usuario->id }}" method="POST" action="{{ route('admin.usuarios.update', $usuario) }}">
                                                             @csrf
                                                             @method('PATCH')
-                                                            <button class="btn-primary gap-2 !rounded-xl !px-4 !py-2.5 !text-xs" type="submit">
+                                                            <button class="btn-primary gap-2 !rounded-xl !px-4 !py-2.5 !text-xs !bg-sky-600 !text-white hover:!bg-sky-700 focus:!ring-sky-500 !opacity-100" type="submit">
                                                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7" />
                                                                 </svg>
@@ -390,10 +392,11 @@
                 @foreach ($categorias as $categoria)
                     @php
                         $productosCategoria = $productos->where('categoria_id', $categoria->id)->sortBy('nombre');
+                        $hasLowStock = $productosCategoria->contains(fn ($producto) => $producto->stock <= 5);
                     @endphp
 
                     @if ($productosCategoria->isNotEmpty())
-                        <details @if($loop->first) id="admin-stock-bajo" @endif class="overflow-hidden rounded-2xl border border-slate-200 bg-white scroll-mt-24">
+                        <details @if($loop->first) id="admin-stock-bajo" @endif @if($hasLowStock) open @endif class="overflow-hidden rounded-2xl border border-slate-200 bg-white scroll-mt-24">
                             <summary class="flex cursor-pointer list-none items-center justify-between gap-4 bg-slate-50 px-4 py-4 marker:hidden sm:px-5">
                                 <div>
                                     <h4 class="text-base font-semibold text-slate-900 sm:text-lg">{{ $categoria->nombre }}</h4>
