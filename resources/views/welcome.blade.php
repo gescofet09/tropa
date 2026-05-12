@@ -7,10 +7,12 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-    <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60">
-        <div class="mb-6 text-center">
-            <h1 class="text-3xl font-semibold tracking-wide text-slate-900">TROPA</h1>
-            <p class="mt-2 text-sm text-slate-500">Gestión de pedidos y reparto</p>
+    <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-7 shadow-xl shadow-slate-200/60">
+        <div class="mb-5 text-center">
+            <div class="mx-auto flex w-64 items-center justify-center">
+                <img src="{{ asset('images/logo.png') }}" alt="TROPA" class="-mb-10 h-56 w-56 object-contain">
+            </div>
+            <p class="mt-1 text-sm text-slate-500">Gestión de pedidos y reparto</p>
         </div>
 
         <form method="POST" action="{{ route('login.submit') }}" class="space-y-5">

@@ -14,6 +14,11 @@ class Factura extends Model
         'archivoPDF'
     ];
 
+    protected $casts = [
+        'fecha' => 'datetime',
+        'total' => 'decimal:2',
+    ];
+
     public function pedido(){
         return $this->belongsTo(Pedido::class);
     }

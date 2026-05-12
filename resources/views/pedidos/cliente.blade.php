@@ -65,6 +65,7 @@
                     <tr class="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                         <th class="px-4 py-3">ID</th>
                         <th class="px-4 py-3">Productos</th>
+                        <th class="px-4 py-3">Total</th>
                         <th class="px-4 py-3">Seguimiento</th>
                         <th class="px-4 py-3 text-center align-middle">Documentos</th>
                     </tr>
@@ -113,6 +114,9 @@
                                         </div>
                                     </template>
                                 </div>
+                            </td>
+                            <td class="px-4 py-4 font-semibold text-slate-700">
+                                {{ number_format((float) $pedido->total, 2, ',', '.') }} €
                             </td>
                             <td class="estado-pedido px-4 py-4">
                                 <x-estado-pedido :estado="$pedido->estado" />

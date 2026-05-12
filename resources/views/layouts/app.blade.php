@@ -9,9 +9,12 @@
 <body class="min-h-screen bg-slate-100">
     <header class="border-b border-slate-200 bg-slate-900 text-white">
         <div class="app-shell flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h1 class="text-xl font-semibold tracking-wide">TROPA</h1>
-                <p class="text-sm text-slate-300">Gestión de pedidos</p>
+            <div class="flex items-center gap-3">
+                <img src="{{ asset('images/logo.png') }}" alt="TROPA" class="h-16 w-16 object-contain">
+                <div>
+                    <h1 class="text-xl font-semibold tracking-wide">TROPA</h1>
+                    <p class="text-sm text-slate-300">Gestión de pedidos</p>
+                </div>
             </div>
 
             <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4">

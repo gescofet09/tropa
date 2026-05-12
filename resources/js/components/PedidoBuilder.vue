@@ -40,6 +40,7 @@ const filteredCategories = computed(() => {
 });
 
 const hasResults = computed(() => filteredCategories.value.length > 0);
+const igicRate = 0.07;
 
 const selectedProducts = computed(() => {
     return props.categories.flatMap((category) =>
@@ -51,6 +52,26 @@ const selectedProducts = computed(() => {
             }))
     );
 });
+
+const orderBase = computed(() => {
+    return selectedProducts.value.reduce((total, product) => {
+        return total + (Number(product.precio) * Number(product.cantidad));
+    }, 0);
+});
+
+const orderIgic = computed(() => orderBase.value * igicRate);
+const orderTotal = computed(() => orderBase.value + orderIgic.value);
+
+function formatCurrency(value) {
+    return new Intl.NumberFormat('es-ES', {
+        style: 'currency',
+        currency: 'EUR',
+    }).format(value);
+}
+
+function priceWithIgic(price) {
+    return Number(price) * (1 + igicRate);
+}
 
 watch(
     filteredCategories,
@@ -255,7 +276,7 @@ function submitOrder() {
                                             <div>
                                                 <p class="font-semibold text-slate-800">{{ product.nombre }}</p>
                                                 <p class="text-sm text-slate-500">
-                                                    {{ product.precio }}€/{{ product.unidad }} · Stock: {{ product.stock }}
+                                                    {{ formatCurrency(priceWithIgic(product.precio)) }}/{{ product.unidad }} · IGIC incl. · Stock: {{ product.stock }}
                                                 </p>
                                             </div>
 
@@ -291,7 +312,21 @@ function submitOrder() {
                                     class="flex items-center justify-between gap-3"
                                 >
                                     <span>{{ product.nombre }}</span>
-                                    <span>{{ product.cantidad }} x {{ product.precio }}€</span>
+                                    <span>{{ product.cantidad }} x {{ formatCurrency(priceWithIgic(product.precio)) }}</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 space-y-1 border-t border-slate-200 pt-3 text-sm">
+                                <div class="flex items-center justify-between text-slate-500">
+                                    <span>Base imponible</span>
+                                    <span>{{ formatCurrency(orderBase) }}</span>
+                                </div>
+                                <div class="flex items-center justify-between text-slate-500">
+                                    <span>IGIC  7%</span>
+                                    <span>{{ formatCurrency(orderIgic) }}</span>
+                                </div>
+                                <div class="flex items-center justify-between font-semibold text-slate-900">
+                                    <span>Total</span>
+                                    <span>{{ formatCurrency(orderTotal) }}</span>
                                 </div>
                             </div>
                         </div>

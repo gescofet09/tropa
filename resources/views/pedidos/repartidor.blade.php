@@ -109,7 +109,14 @@
                                         </div>
                                     </div>
 
-                                    <button class="btn-primary self-start" type="button" @click="open = true">Ver pedido</button>
+                                    <div class="acciones-pedido flex flex-wrap gap-2 self-start">
+                                        <button class="btn-primary" type="button" @click="open = true">Ver pedido</button>
+                                        @if($pedido->albaran?->archivoPDF)
+                                            <a href="{{ asset($pedido->albaran->archivoPDF) }}" target="_blank" class="btn-secondary albaran-link">
+                                                Albarán
+                                            </a>
+                                        @endif
+                                    </div>
                                 </div>
 
                                 <template x-teleport="body">
@@ -147,6 +154,14 @@
                                                         </label>
                                                     @endforeach
                                                 </form>
+
+                                                <div class="documentos-pedido flex flex-wrap gap-2">
+                                                    @if($pedido->albaran?->archivoPDF)
+                                                        <a href="{{ asset($pedido->albaran->archivoPDF) }}" target="_blank" class="btn-secondary albaran-link">
+                                                            Albarán
+                                                        </a>
+                                                    @endif
+                                                </div>
 
                                                 <div class="accion-reparto {{ $estadoPedido === 'preparacion' ? '' : 'hidden' }}">
                                                     <form action="{{ route('pedidos.cambiarEstado', $pedido->id) }}" method="POST">
@@ -243,12 +258,26 @@
                 if (data.success) {
                     const timeline = tarjetaPedido?.querySelector('.estado-pedido');
                     const accionReparto = contenedorModal?.querySelector('.accion-reparto');
+                    const documentosPedido = contenedorModal?.querySelector('.documentos-pedido');
+                    const accionesPedido = tarjetaPedido?.querySelector('.acciones-pedido');
                     const estado = (data.estado || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
                     actualizarTimelineRepartidor(timeline, data.estado);
 
                     if (accionReparto) {
                         accionReparto.classList.toggle('hidden', estado !== 'preparacion');
+                    }
+
+                    if (data.albaran?.archivoPDF) {
+                        const albaranUrl = `${window.location.origin}/${data.albaran.archivoPDF}`;
+
+                        if (documentosPedido && !documentosPedido.querySelector('.albaran-link')) {
+                            documentosPedido.insertAdjacentHTML('beforeend', `<a href="${albaranUrl}" target="_blank" class="btn-secondary albaran-link">Albarán</a>`);
+                        }
+
+                        if (accionesPedido && !accionesPedido.querySelector('.albaran-link')) {
+                            accionesPedido.insertAdjacentHTML('beforeend', `<a href="${albaranUrl}" target="_blank" class="btn-secondary albaran-link">Albarán</a>`);
+                        }
                     }
                 }
             });

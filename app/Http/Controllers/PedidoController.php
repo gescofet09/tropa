@@ -12,11 +12,13 @@ use App\Models\Zona;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class PedidoController extends Controller
 {
+    private const IGIC_GENERAL = 0.07;
 
     public function index(Request $request)
     {
@@ -27,6 +29,9 @@ class PedidoController extends Controller
             $pedidos = Pedido::with('cliente', 'repartidor', 'productos.categoria', 'factura', 'albaran')
                 ->latest()
                 ->get();
+
+            $this->sincronizarTotalesConIgic($pedidos);
+            $this->sincronizarDocumentos($pedidos);
 
             $categorias = Categoria::withCount('productos')
                 ->orderBy('nombre')
@@ -66,6 +71,9 @@ class PedidoController extends Controller
                 ->where('repartidor_id', $user->id)
                 ->get();
 
+            $this->sincronizarTotalesConIgic($pedidos);
+            $this->sincronizarDocumentos($pedidos);
+
             return view('pedidos.repartidor', compact('pedidos'));
         }
 
@@ -74,6 +82,8 @@ class PedidoController extends Controller
             $pedidos = Pedido::with('productos', 'factura')
                 ->where('usuario_id', $user->id)
                 ->get();
+
+            $this->sincronizarTotalesConIgic($pedidos);
 
             $categorias = Categoria::query()
                 ->with(['productos' => function ($query) {
@@ -118,7 +128,7 @@ class PedidoController extends Controller
             'total' => 0
         ]);
 
-        $total = 0;
+        $baseImponible = 0;
 
         foreach ($productosSeleccionados as $productoData) {
 
@@ -136,14 +146,14 @@ class PedidoController extends Controller
                 'preparado' => false
             ]);
 
-            $total += $producto->precio * $cantidad;
+            $baseImponible += $producto->precio * $cantidad;
 
             // Reducir stock
             $producto->stock -= $cantidad;
             $producto->save();
         }
 
-        $pedido->total = $total;
+        $pedido->total = $this->calcularTotalConIgic($baseImponible);
         $pedido->save();
 
         return back()->with('success', 'Pedido creado');
@@ -176,10 +186,19 @@ class PedidoController extends Controller
 
         $pedido->save();
 
+        $albaran = null;
+
+        if (!empty($productosMarcados)) {
+            $pedido->unsetRelation('productos');
+            $pedido->load('productos.categoria');
+            $albaran = $this->asegurarAlbaran($pedido, true);
+        }
+
         return response()->json([
             'success' => true,
             'estado' => $pedido->estado,
             'estado_html' => view('components.estado-pedido', ['estado' => $pedido->estado])->render(),
+            'albaran' => $albaran,
         ]);
     }
 
@@ -202,61 +221,18 @@ class PedidoController extends Controller
         }
 
         // Actualizar estado del pedido
+        $pedido->total = $this->calcularTotalConIgic($this->calcularBasePedido($pedido));
         $pedido->estado = $nuevoEstado;
         $pedido->save();
 
-        //* Albarán 
+        //* Albarán
         if (\Illuminate\Support\Str::slug((string) $nuevoEstado, '') === 'preparacion') {
-
-            // Crear registro de albarán
-            $albaran = Albaran::create([
-                'pedido_id' => $pedido->id,
-                'fecha' => now(),
-                'archivoPDF' => null
-            ]);
-
-            // Asegurarnos de que exista la carpeta
-            $albaransPath = storage_path('app/public/albarans');
-            if (!file_exists($albaransPath)) {
-                mkdir($albaransPath, 0775, true);
-            }
-
-            // Generar PDF
-            $fileName = 'albaran_'.$albaran->id.'.pdf';
-            $pdf = Pdf::loadView('albarans.pdf', compact('pedido', 'albaran'));
-            $pdf->save($albaransPath.'/'.$fileName);
-
-            // Guardar ruta en la base de datos
-            $albaran->archivoPDF = 'storage/albarans/'.$fileName;
-            $albaran->save();
+            $this->asegurarAlbaran($pedido);
         }
 
         //* factura
         if ($nuevoEstado === 'entregado') {
-
-            // Crear registro de factura
-            $factura = Factura::create([
-                'pedido_id' => $pedido->id,
-                'fecha' => now(),
-                'numero' => 'F-'.$pedido->id.'-'.time(),
-                'total' => $pedido->total,
-                'archivoPDF' => null
-            ]);
-
-            // Asegurarnos de que exista la carpeta
-            $facturasPath = storage_path('app/public/facturas');
-            if (!file_exists($facturasPath)) {
-                mkdir($facturasPath, 0775, true);
-            }
-
-            // Generar PDF
-            $fileName = 'factura_'.$factura->id.'.pdf';
-            $pdf = Pdf::loadView('facturas.pdf', compact('pedido', 'factura'));
-            $pdf->save($facturasPath.'/'.$fileName);
-
-            // Guardar ruta en la base de datos
-            $factura->archivoPDF = 'storage/facturas/'.$fileName;
-            $factura->save();
+            $this->asegurarFactura($pedido);
         }
 
         return back()->with('success', 'Estado actualizado');
@@ -293,6 +269,9 @@ class PedidoController extends Controller
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
+        $this->sincronizarTotalesConIgic(collect([$pedido]));
+        $this->sincronizarDocumentos(collect([$pedido]));
+
         $pedido->load(['albaran', 'factura']);
 
         return response()->json([
@@ -310,11 +289,13 @@ class PedidoController extends Controller
             return back()->with('error', 'No autorizado');
         }
 
+        $baseImponible = $this->calcularBasePedido($pedido);
+
         $nuevoPedido = Pedido::create([
             'usuario_id' => $user->id,
             'repartidor_id' => $pedido->repartidor_id,
             'estado' => 'recibido',
-            'total' => $pedido->total
+            'total' => $this->calcularTotalConIgic($baseImponible)
         ]);
 
         foreach ($pedido->productos as $producto) {
@@ -450,6 +431,138 @@ class PedidoController extends Controller
     private function authorizeAdmin(): void
     {
         abort_unless(Auth::check() && Auth::user()->esAdmin(), 403);
+    }
+
+    private function sincronizarDocumentos($pedidos): void
+    {
+        foreach ($pedidos as $pedido) {
+            $estado = \Illuminate\Support\Str::slug((string) $pedido->estado, '');
+
+            if (in_array($estado, ['preparacion', 'reparto', 'entregado'], true)) {
+                $this->asegurarAlbaran($pedido, true);
+            }
+
+            if ($estado === 'entregado') {
+                $this->asegurarFactura($pedido);
+            }
+        }
+
+        if (method_exists($pedidos, 'load')) {
+            $pedidos->load(['albaran', 'factura']);
+        }
+    }
+
+    private function sincronizarTotalesConIgic($pedidos): void
+    {
+        foreach ($pedidos as $pedido) {
+            $totalConIgic = $this->calcularTotalConIgic($this->calcularBasePedido($pedido));
+
+            if (round((float) $pedido->total, 2) !== $totalConIgic) {
+                $pedido->update(['total' => $totalConIgic]);
+            }
+        }
+    }
+
+    private function asegurarAlbaran(Pedido $pedido, bool $regenerar = false): Albaran
+    {
+        $pedido->loadMissing(['cliente', 'repartidor', 'productos.categoria']);
+
+        $albaran = Albaran::firstOrCreate(
+            ['pedido_id' => $pedido->id],
+            ['fecha' => now(), 'archivoPDF' => null]
+        );
+
+        if ($regenerar || !$this->documentoExiste($albaran->archivoPDF)) {
+            $fileName = 'albaran_pedido_'.$pedido->id.'.pdf';
+            $relativePath = 'albarans/'.$fileName;
+
+            Storage::disk('public')->makeDirectory('albarans');
+
+            Pdf::loadView('albarans.pdf', compact('pedido', 'albaran'))
+                ->setPaper('a4')
+                ->save(storage_path('app/public/'.$relativePath));
+
+            $albaran->update(['archivoPDF' => 'storage/'.$relativePath]);
+        }
+
+        return $albaran;
+    }
+
+    private function asegurarFactura(Pedido $pedido): Factura
+    {
+        $pedido->loadMissing(['cliente', 'repartidor', 'productos.categoria']);
+        $importes = $this->calcularImportesFactura($pedido);
+
+        $factura = Factura::firstOrCreate(
+            ['pedido_id' => $pedido->id],
+            [
+                'fecha' => now(),
+                'numero' => 'F-'.now()->format('Y').'-'.str_pad((string) $pedido->id, 5, '0', STR_PAD_LEFT),
+                'total' => $importes['total'],
+                'archivoPDF' => null,
+            ]
+        );
+
+        $totalHaCambiado = round((float) $factura->total, 2) !== $importes['total'];
+
+        if ($totalHaCambiado) {
+            $factura->update(['total' => $importes['total']]);
+            $factura->refresh();
+        }
+
+        if ($totalHaCambiado || !$this->documentoExiste($factura->archivoPDF)) {
+            $fileName = 'factura_pedido_'.$pedido->id.'.pdf';
+            $relativePath = 'facturas/'.$fileName;
+
+            Storage::disk('public')->makeDirectory('facturas');
+
+            Pdf::loadView('facturas.pdf', compact('pedido', 'factura'))
+                ->setPaper('a4')
+                ->save(storage_path('app/public/'.$relativePath));
+
+            $factura->update(['archivoPDF' => 'storage/'.$relativePath]);
+        }
+
+        return $factura;
+    }
+
+    private function calcularImportesFactura(Pedido $pedido): array
+    {
+        $total = round((float) $pedido->total, 2);
+        $base = round($total / (1 + self::IGIC_GENERAL), 2);
+        $igic = round($total - $base, 2);
+
+        return [
+            'base' => $base,
+            'igic_tipo' => self::IGIC_GENERAL,
+            'igic' => $igic,
+            'total' => $total,
+        ];
+    }
+
+    private function calcularTotalConIgic(float $baseImponible): float
+    {
+        return round($baseImponible * (1 + self::IGIC_GENERAL), 2);
+    }
+
+    private function calcularBasePedido(Pedido $pedido): float
+    {
+        $pedido->loadMissing('productos');
+
+        return round($pedido->productos->sum(function ($producto) {
+            return (float) $producto->pivot->precio_unitario * (int) $producto->pivot->cantidad;
+        }), 2);
+    }
+
+    private function documentoExiste(?string $publicPath): bool
+    {
+        if (!$publicPath) {
+            return false;
+        }
+
+        $relativePath = str_replace('storage/', '', $publicPath);
+
+        return Storage::disk('public')->exists($relativePath);
     }
 
 }
