@@ -68,7 +68,9 @@ class PedidoController extends Controller
         // REPARTIDOR
         if ($user->esRepartidor()) {
             $pedidos = Pedido::with('cliente', 'productos', 'factura', 'albaran')
-                ->where('repartidor_id', $user->id)
+                ->whereHas('cliente', function ($query) use ($user) {
+                    $query->where('zona_id', $user->zona_id);
+                })
                 ->get();
 
             $this->sincronizarTotalesConIgic($pedidos);
@@ -114,10 +116,12 @@ class PedidoController extends Controller
         }
 
         // Buscar repartidor de la misma zona
-        $repartidor = User::where('rol', 'repartidor')->first();
+        $repartidor = User::where('rol', 'repartidor')
+            ->where('zona_id', $user->zona_id)
+            ->first();
 
         if (!$repartidor) {
-            return back()->with('error', 'No hay repartidores disponibles');
+            return back()->with('error', 'No hay repartidores disponibles en tu zona');
         }
 
         // Crear pedido
@@ -165,7 +169,9 @@ class PedidoController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user->esRepartidor() || $pedido->repartidor_id !== $user->id) {
+        $pedido->load('cliente');
+
+        if (!$user->esRepartidor() || $pedido->cliente->zona_id !== $user->zona_id) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
@@ -215,8 +221,9 @@ class PedidoController extends Controller
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
-        // REPARTIDOR solo puede cambiar a reparto o entregado
-        if ($user->esRepartidor() && !in_array($nuevoEstado, ['reparto', 'entregado'])) {
+        // REPARTIDOR solo puede cambiar a reparto o entregado, y debe ser de la misma zona
+        $pedido->load('cliente');
+        if ($user->esRepartidor() && (!in_array($nuevoEstado, ['reparto', 'entregado']) || $pedido->cliente->zona_id !== $user->zona_id)) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
@@ -265,7 +272,8 @@ class PedidoController extends Controller
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
-        if ($user->esRepartidor() && $pedido->repartidor_id !== $user->id) {
+        $pedido->load('cliente');
+        if ($user->esRepartidor() && $pedido->cliente->zona_id !== $user->zona_id) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
