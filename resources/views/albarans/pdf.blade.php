@@ -14,7 +14,7 @@
             margin: 0;
         }
         .topbar {
-            background: #1d4ed8;
+            background: #0B1F3A;
             color: #ffffff;
             padding: 22px 24px;
         }
@@ -27,10 +27,15 @@
         }
         .brand-wrap { width: 72%; }
         .logo {
-            height: 74px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            display: inline-block;
+            height: 40px;
             margin-right: 12px;
+            margin-top: 6px;
             object-fit: contain;
-            width: 74px;
+            padding: 6px;
+            width: 40px;
         }
         .brand-cell { vertical-align: middle; }
         .document-title {
@@ -61,7 +66,7 @@
             width: 94px;
         }
         .section-title {
-            color: #1d4ed8;
+            color: #0B1F3A;
             font-size: 11px;
             font-weight: 700;
             letter-spacing: .4px;
@@ -181,7 +186,7 @@
             </td>
             <td class="right">
                 <div class="muted">Productos preparados</div>
-                <div style="font-size: 24px; font-weight: 700; color: #1d4ed8;">
+                <div style="font-size: 24px; font-weight: 700; color: #0B1F3A;">
                     {{ $productosPreparados }}/{{ $pedido->productos->count() }}
                 </div>
             </td>

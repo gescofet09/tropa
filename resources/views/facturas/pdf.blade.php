@@ -14,7 +14,7 @@
             margin: 0;
         }
         .topbar {
-            background: #0f766e;
+            background: #0B1F3A;
             color: #ffffff;
             padding: 22px 24px;
         }
@@ -27,10 +27,15 @@
         }
         .brand-wrap { width: 72%; }
         .logo {
-            height: 74px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            display: inline-block;
+            height: 40px;
             margin-right: 12px;
+            margin-top: 6px;
             object-fit: contain;
-            width: 74px;
+            padding: 6px;
+            width: 40px;
         }
         .brand-cell { vertical-align: middle; }
         .document-title {
@@ -40,7 +45,7 @@
             text-align: right;
         }
         .muted { color: #6b7280; }
-        .white-muted { color: #ccfbf1; }
+        .white-muted { color: #dbeafe; }
         .header-table, .info-table, .items-table, .totals-table { width: 100%; border-collapse: collapse; }
         .header-table td { vertical-align: top; }
         .header-table .right { text-align: right; }
@@ -61,7 +66,7 @@
             width: 92px;
         }
         .section-title {
-            color: #0f766e;
+            color: #0B1F3A;
             font-size: 11px;
             font-weight: 700;
             letter-spacing: .4px;
@@ -114,7 +119,7 @@
         }
         .totals-table .grand td {
             border-bottom: 0;
-            color: #0f766e;
+            color: #0B1F3A;
             font-size: 18px;
             font-weight: 700;
             padding-top: 12px;
@@ -181,7 +186,7 @@
             </td>
             <td class="right">
                 <div class="muted">Importe total</div>
-                <div style="font-size: 24px; font-weight: 700; color: #0f766e;">
+                <div style="font-size: 24px; font-weight: 700; color: #0B1F3A;">
                     {{ number_format($totalFactura, 2, ',', '.') }} EUR
                 </div>
                 <div class="muted">Incluye IGIC  {{ number_format($igicTipo * 100, 0, ',', '.') }}%</div>
