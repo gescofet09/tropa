@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Password;
 
 class PedidoController extends Controller
 {
@@ -317,6 +319,8 @@ class PedidoController extends Controller
         return back()->with('success', 'Pedido repetido correctamente');
     }
 
+
+
     public function storeUsuario(Request $request)
     {
         $this->authorizeAdmin();
@@ -324,18 +328,26 @@ class PedidoController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:usuarios,email'],
-            'password' => ['required', 'string', 'min:8'],
             'rol' => ['required', Rule::in(['cliente', 'repartidor', 'admin'])],
             'zona_id' => ['nullable', 'exists:zonas,id'],
         ]);
 
-        $data['password'] = Hash::make($data['password']);
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'rol' => $data['rol'],
+            'zona_id' => $data['zona_id'] ?? null,
+            'password' => Hash::make(Str::random(32)),
+        ]);
 
-        User::create($data);
+        $status = Password::sendResetLink(['email' => $user->email]);
 
-        return back()->with('success', 'Usuario creado correctamente');
-    }
+        if ($status === Password::RESET_LINK_SENT) {
+            return back()->with('success', 'Usuario creado y correo enviado para establecer contraseña');
+        }
 
+        return back()->with('error', 'No se pudo enviar el correo de recuperación');
+    }  
     public function updateUsuario(Request $request, User $user)
     {
         $this->authorizeAdmin();
@@ -571,6 +583,20 @@ class PedidoController extends Controller
         $relativePath = str_replace('storage/', '', $publicPath);
 
         return Storage::disk('public')->exists($relativePath);
+    }
+    public function resetPassword(User $user)
+    {
+        $this->authorizeAdmin();
+
+        $status = Password::sendResetLink([
+            'email' => $user->email
+        ]);
+
+        if ($status === Password::RESET_LINK_SENT) {
+            return back()->with('success', 'Correo de recuperación enviado.');
+        }
+
+        return back()->with('error', 'No se pudo enviar el correo.');
     }
 
 }

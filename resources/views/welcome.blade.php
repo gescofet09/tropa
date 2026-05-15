@@ -33,6 +33,9 @@
             </div>
 
             <button class="btn-primary w-full" type="submit">Entrar</button>
+            <div class="text-center">
+                <a href="{{ route('password.request') }}" class="text-sm text-sky-600 hover:underline">¿Has olvidado tu contraseña?</a>
+            </div>
         </form>
     </div>
 </body>

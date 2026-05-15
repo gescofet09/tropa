@@ -175,11 +175,6 @@
                     </div>
 
                     <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700" for="user_password">Contraseña</label>
-                        <input class="input-base" id="user_password" name="password" type="password" placeholder=".........." required>
-                    </div>
-
-                    <div>
                         <label class="mb-2 block text-sm font-semibold text-slate-700" for="user_rol">Rol</label>
                         <select class="input-base" id="user_rol" name="rol" required>
                             <option value="cliente">Cliente</option>
@@ -188,7 +183,7 @@
                         </select>
                     </div>
 
-                    <div class="md:col-span-2">
+                    <div>
                         <label class="mb-2 block text-sm font-semibold text-slate-700" for="user_zona">Zona</label>
                         <select class="input-base" id="user_zona" name="zona_id">
                             <option value="">Sin zona asignada</option>
@@ -197,6 +192,12 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="md:col-span-2">
+                        <div class="rounded-2xl bg-sky-50 p-4 text-sm text-sky-700">
+                            El usuario recibirá un email para crear su contraseña.
+                        </div>
+                    </div>
+
 
                     <div class="md:col-span-2">
                         <button class="btn-primary gap-2 !rounded-xl !px-5 !py-3" type="submit">
@@ -320,9 +321,8 @@
                                                     <input class="input-base" form="user-update-{{ $usuario->id }}" name="name" type="text" value="{{ $usuario->name }}" required>
                                                 </td>
                                                 <td class="space-y-3 px-5 py-5">
-                                                    <div class="text-sm text-slate-600">{{ $usuario->email }}</div>
+                                                    <!-- <div class="text-sm text-slate-600">{{ $usuario->email }}</div> -->
                                                     <input class="input-base" form="user-update-{{ $usuario->id }}" name="email" type="email" value="{{ $usuario->email }}" required>
-                                                    <input class="input-base" form="user-update-{{ $usuario->id }}" name="password" type="password" placeholder="Nueva contraseña (opcional)">
                                                 </td>
                                                 <td class="px-5 py-5">
                                                     <select class="input-base" form="user-update-{{ $usuario->id }}" name="rol" required>
@@ -362,6 +362,19 @@
                                                                 Eliminar
                                                             </button>
                                                         </form>
+
+                                                         <div class="flex justify-center">
+                                                        <form method="POST" action="{{ route('admin.usuarios.reset-password', $usuario) }}">
+                                                            @csrf
+                                                            <button class="btn-secondary gap-2 !rounded-xl !px-4 !py-2.5 !text-xs" type="submit">
+                                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5l9 6 9-6" />
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5A2.5 2.5 0 0 1 5.5 5h13A2.5 2.5 0 0 1 21 7.5v9A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5v-9Z" />
+                                                                </svg>
+                                                                Recuperar contraseña
+                                                            </button>
+                                                        </form>
+                                                    </div> 
                                                     </div>
                                                 </td>
                                             </tr>

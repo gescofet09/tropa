@@ -5,11 +5,25 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 
 Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
+//* Recuperar contraseña 
+Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])
+    ->name('password.request');
+
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])
+    ->name('password.email');
+
+Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])
+    ->name('password.reset');
+
+Route::post('/reset-password', [ResetPasswordController::class, 'reset'])
+    ->name('password.update');
 
 Route::middleware('auth')->group(function () {
     Route::get('/pedidos', [PedidoController::class,'index'])->name('pedidos');
@@ -28,4 +42,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/admin/productos/{producto}', [PedidoController::class, 'updateProducto'])->name('admin.productos.update');
     Route::patch('/admin/productos/{producto}/stock', [PedidoController::class, 'updateStock'])->name('admin.productos.stock');
     Route::delete('/admin/productos/{producto}', [PedidoController::class, 'destroyProducto'])->name('admin.productos.destroy');
+    Route::post('/admin/usuarios/{user}/reset-password', [PedidoController::class, 'resetPassword'])
+    ->name('admin.usuarios.reset-password');
 });
