@@ -49,7 +49,7 @@ class DatabaseSeeder extends Seeder
         //* admin
         $admin = User::create([
             'name' => 'admin',
-            'email' => 'admin@tropa.com',
+            'email' => 'tropaadmin@gmail.com',
             'password' => Hash::make('admin.pass'),
             'rol' => 'admin',
             'zona_id' => null
