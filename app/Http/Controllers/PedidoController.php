@@ -134,8 +134,6 @@ class PedidoController extends Controller
             'total' => 0
         ]);
 
-        $this->asegurarAlbaran($pedido);
-
         $baseImponible = 0;
 
         foreach ($productosSeleccionados as $productoData) {
@@ -195,6 +193,14 @@ class PedidoController extends Controller
         }
 
         $pedido->save();
+
+        $albaran = null;
+
+        if (!empty($productosMarcados)) {
+            $pedido->unsetRelation('productos');
+            $pedido->load('productos.categoria');
+            $albaran = $this->asegurarAlbaran($pedido, true);
+        }
 
         return response()->json([
             'success' => true,
@@ -499,7 +505,7 @@ class PedidoController extends Controller
         foreach ($pedidos as $pedido) {
             $estado = \Illuminate\Support\Str::slug((string) $pedido->estado, '');
 
-            if (in_array($estado, ['reparto', 'entregado'], true)) {
+            if (in_array($estado, ['preparacion', 'reparto', 'entregado'], true)) {
                 $this->asegurarAlbaran($pedido, true);
             }
 
