@@ -98,7 +98,7 @@ return [
     'min'                    => [
         'array'   => 'El campo :attribute debe tener al menos :min elementos.',
         'file'    => 'El tamaño de :attribute debe ser de al menos :min kilobytes.',
-        'numeric' => 'El tamaño de :attribute debe ser de al menos :min.',
+        'numeric' => 'El campo :attribute debe ser de al menos :min.',
         'string'  => 'El campo :attribute debe contener al menos :min caracteres.',
     ],
     'min_digits'             => 'El campo :attribute debe tener al menos :min dígitos.',
