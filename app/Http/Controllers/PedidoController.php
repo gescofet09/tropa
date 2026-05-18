@@ -28,9 +28,24 @@ class PedidoController extends Controller
 
         // ADMIN
         if ($user->esAdmin()) {
-            $pedidos = Pedido::with('cliente', 'repartidor', 'productos.categoria', 'factura', 'albaran')
-                ->latest()
-                ->get();
+            $estadosPedido = ['recibido', 'preparacion', 'reparto', 'entregado'];
+            $busquedaPedido = trim((string) $request->query('cliente', ''));
+            $estadoPedido = $request->query('estado');
+
+            $pedidosQuery = Pedido::with('cliente', 'repartidor', 'productos.categoria', 'factura', 'albaran')
+                ->latest();
+
+            if ($busquedaPedido !== '') {
+                $pedidosQuery->whereHas('cliente', function ($query) use ($busquedaPedido) {
+                    $query->where('name', 'like', '%' . $busquedaPedido . '%');
+                });
+            }
+
+            if (in_array($estadoPedido, $estadosPedido, true)) {
+                $pedidosQuery->where('estado', $estadoPedido);
+            }
+
+            $pedidos = $pedidosQuery->get();
 
             $this->sincronizarTotalesConIgic($pedidos);
             $this->sincronizarDocumentos($pedidos);
@@ -64,7 +79,12 @@ class PedidoController extends Controller
                 'ventas_totales' => $pedidos->sum('total'),
             ];
 
-            return view('pedidos.admin', compact('pedidos', 'categorias', 'productos', 'usuarios', 'zonas', 'stats'));
+            $filtrosPedidos = [
+                'cliente' => $busquedaPedido,
+                'estado' => in_array($estadoPedido, $estadosPedido, true) ? $estadoPedido : '',
+            ];
+
+            return view('pedidos.admin', compact('pedidos', 'categorias', 'productos', 'usuarios', 'zonas', 'stats', 'filtrosPedidos', 'estadosPedido'));
         }
 
         // REPARTIDOR

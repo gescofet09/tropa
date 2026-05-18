@@ -77,6 +77,14 @@
                 ],
             ];
 
+            $estadoLabels = [
+                'recibido' => 'Recibido',
+                'preparacion' => 'Preparación',
+                'reparto' => 'En reparto',
+                'entregado' => 'Entregado',
+            ];
+            $filtrosPedidos = $filtrosPedidos ?? ['cliente' => '', 'estado' => ''];
+            $filtrosPedidosActivos = filled($filtrosPedidos['cliente']) || filled($filtrosPedidos['estado']);
             $pedidosAgrupados = $pedidos
                 ->sortByDesc('id')
                 ->groupBy(fn ($pedido) => $pedido->repartidor?->id ? 'repartidor-' . $pedido->repartidor->id : 'sin-asignar');
@@ -508,8 +516,36 @@
                 </div>
             </div>
 
+            <form class="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-3 sm:flex-row sm:items-center sm:p-4" method="GET" action="{{ route('pedidos') }}#admin-pedidos">
+                <div class="min-w-0 flex-1">
+                    <label class="sr-only" for="pedido_cliente">Buscar por cliente</label>
+                    <input class="input-base" id="pedido_cliente" name="cliente" type="search" value="{{ $filtrosPedidos['cliente'] }}" placeholder="Buscar por cliente">
+                </div>
+
+                <div class="sm:w-56">
+                    <label class="sr-only" for="pedido_estado">Filtrar por estado</label>
+                    <select class="input-base" id="pedido_estado" name="estado">
+                        <option value="">Todos los estados</option>
+                        @foreach ($estadosPedido as $estado)
+                            <option value="{{ $estado }}" @selected($filtrosPedidos['estado'] === $estado)>{{ $estadoLabels[$estado] ?? ucfirst($estado) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex shrink-0 gap-2">
+                    <button class="btn-primary h-11 w-11 !rounded-xl !p-0" type="submit" aria-label="Buscar pedidos">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" />
+                        </svg>
+                    </button>
+                    @if ($filtrosPedidosActivos)
+                        <a class="btn-secondary h-11 !rounded-xl !px-4" href="{{ route('pedidos') }}#admin-pedidos">Limpiar</a>
+                    @endif
+                </div>
+            </form>
+
             <div class="mt-6 space-y-4">
-                @foreach ($pedidosAgrupados as $grupoKey => $pedidosGrupo)
+                @forelse ($pedidosAgrupados as $grupoKey => $pedidosGrupo)
                     @php
                         $repartidorGrupo = $pedidosGrupo->first()?->repartidor;
                         $tituloGrupo = $repartidorGrupo?->name ?? 'Sin asignar';
@@ -518,7 +554,7 @@
                             : 'Pedidos pendientes de asignar a un repartidor.';
                     @endphp
 
-                    <details class="overflow-hidden rounded-2xl border border-slate-100 bg-white">
+                    <details @if($filtrosPedidosActivos) open @endif class="overflow-hidden rounded-2xl border border-slate-100 bg-white">
                         <summary class="flex cursor-pointer list-none flex-col gap-3 bg-slate-50/80 px-4 py-4 marker:hidden sm:flex-row sm:items-center sm:justify-between sm:px-5">
                             <div>
                                 <div class="flex items-center gap-3">
@@ -642,7 +678,11 @@
                             </table>
                         </div>
                     </details>
-                @endforeach
+                @empty
+                    <div class="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-500">
+                        No hay pedidos que coincidan con la búsqueda o el filtro seleccionado.
+                    </div>
+                @endforelse
             </div>
         </section>
     </div>
