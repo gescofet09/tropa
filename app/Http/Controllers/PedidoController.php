@@ -32,6 +32,7 @@ class PedidoController extends Controller
             $busquedaPedido = trim((string) $request->query('cliente', ''));
             $estadoPedido = $request->query('estado');
 
+            // El admin puede buscar por cliente y filtrar por estado desde la URL.
             $pedidosQuery = Pedido::with('cliente', 'repartidor', 'productos.categoria', 'factura', 'albaran')
                 ->latest();
 

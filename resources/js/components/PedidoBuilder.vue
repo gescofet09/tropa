@@ -25,6 +25,7 @@ const openCategories = reactive({});
 const normalizedSearch = computed(() => search.value.trim().toLowerCase());
 
 const filteredCategories = computed(() => {
+    // Se mantienen las categorias, pero solo con productos que coinciden con la busqueda.
     return props.categories
         .map((category) => ({
             ...category,
@@ -43,6 +44,7 @@ const hasResults = computed(() => filteredCategories.value.length > 0);
 const igicRate = 0.07;
 
 const selectedProducts = computed(() => {
+    // El resumen y el envio usan solo productos con cantidad mayor que cero.
     return props.categories.flatMap((category) =>
         category.productos
             .filter((product) => Number(quantities[product.id]) > 0)
@@ -136,6 +138,7 @@ function updateQuantity(product, value) {
         return;
     }
 
+    // Nunca se permite pedir mas unidades que el stock disponible.
     quantities[product.id] = Math.min(parsedValue, product.stock);
 }
 
@@ -148,6 +151,7 @@ function submitOrder() {
         return;
     }
 
+    // Se crea un formulario normal para que Laravel reciba el pedido con CSRF.
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = props.storeUrl;

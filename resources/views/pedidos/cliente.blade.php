@@ -37,14 +37,7 @@
 
         <div class="mt-4 space-y-3">
             @if(session('success'))
-                <div
-                    x-data="{ visible: true }"
-                    x-init="setTimeout(() => visible = false, 2000)"
-                    x-show="visible"
-                    x-transition.opacity.duration.250ms
-                    class="px-4 py-3 text-sm"
-                    style="background-color: #d1fae5; border: 1px solid #a7f3d0; color: #047857; border-radius: 0.75rem;"
-                >
+                <div class="alert-success">
                     {{ session('success') }}
                 </div>
             @endif
@@ -75,44 +68,41 @@
                         <tr data-pedido-id="{{ $pedido->id }}" class="align-top">
                             <td class="px-4 py-4 font-semibold text-slate-700">#{{ $pedido->id }}</td>
                             <td class="px-4 py-4">
-                                <div x-data="{ open: false }" @keydown.escape.window="open = false" class="space-y-3">
+                                <div class="space-y-3">
                                     <button
                                         class="btn-primary btn-base !px-3 !py-1.5 text-xs"
                                         type="button"
-                                        @click="open = true"
-                                        x-text="'Ver productos'"
-                                    ></button>
+                                        data-modal-open="cliente-pedido-{{ $pedido->id }}"
+                                    >Ver productos</button>
 
-                                    <template x-teleport="body">
-                                        <div x-show="open" x-cloak>
-                                            <div class="modal-overlay" @click="open = false"></div>
+                                    <div id="cliente-pedido-{{ $pedido->id }}" class="hidden" data-modal>
+                                        <div class="modal-overlay" data-modal-close></div>
 
-                                            <div class="modal-panel max-w-2xl" @click.stop>
-                                                <div class="modal-header">
-                                                    <div>
-                                                        <h3 class="text-lg font-semibold text-slate-900">Productos del pedido #{{ $pedido->id }}</h3>
-                                                        <p class="text-sm text-slate-500">Detalle del pedido actual.</p>
-                                                    </div>
-
-                                                    <button class="btn-secondary" type="button" @click="open = false">Cerrar</button>
+                                        <div class="modal-panel max-w-2xl">
+                                            <div class="modal-header">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-slate-900">Productos del pedido #{{ $pedido->id }}</h3>
+                                                    <p class="text-sm text-slate-500">Detalle del pedido actual.</p>
                                                 </div>
 
-                                                <div class="space-y-2">
-                                                    @foreach($pedido->productos as $prod)
-                                                        <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-                                                            <span class="font-medium text-slate-700">{{ $prod->nombre }}</span>
-                                                            <span class="text-slate-500">Cantidad {{ $prod->pivot->cantidad }}</span>
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-
-                                                <form action="{{ route('pedidos.repetir', $pedido->id) }}" method="POST" class="mt-4">
-                                                    @csrf
-                                                    <button type="submit" class="btn-success w-full">Repetir pedido</button>
-                                                </form>
+                                                <button class="btn-secondary" type="button" data-modal-close>Cerrar</button>
                                             </div>
+
+                                            <div class="space-y-2">
+                                                @foreach($pedido->productos as $prod)
+                                                    <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                                                        <span class="font-medium text-slate-700">{{ $prod->nombre }}</span>
+                                                        <span class="text-slate-500">Cantidad {{ $prod->pivot->cantidad }}</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+
+                                            <form action="{{ route('pedidos.repetir', $pedido->id) }}" method="POST" class="mt-4">
+                                                @csrf
+                                                <button type="submit" class="btn-success w-full">Repetir pedido</button>
+                                            </form>
                                         </div>
-                                    </template>
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-4 py-4 font-semibold text-slate-700">

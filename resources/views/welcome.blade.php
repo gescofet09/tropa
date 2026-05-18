@@ -12,7 +12,7 @@
             <div class="mx-auto flex w-64 items-center justify-center">
                 <img src="{{ asset('images/logo.png') }}" alt="TROPA" class="-mb-10 h-56 w-56 object-contain">
             </div>
-            <p class="mt-1 text-sm text-slate-500">Gestión de pedidos y reparto</p>
+            <p class="mt-1 text-sm text-slate-500">Tracking y reparto de órdenes con procesos automatizados</p>
         </div>
 
         <form method="POST" action="{{ route('login.submit') }}" class="space-y-5">

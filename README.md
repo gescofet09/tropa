@@ -1,59 +1,99 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# TROPA - Gestion de pedidos
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+TROPA es una aplicacion Laravel para gestionar pedidos, productos, usuarios, repartidores, albaranes y facturas. La interfaz esta hecha principalmente con Blade y Tailwind CSS. Para crear pedidos desde la zona de cliente se usa un componente Vue.
 
-## About Laravel
+## Tecnologias principales
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Laravel: backend, rutas, controladores, modelos, validaciones y sesiones.
+- Blade: vistas del administrador, repartidor, cliente, login y documentos PDF.
+- Tailwind CSS: estilos responsive y componentes visuales.
+- Vue 3: selector dinamico de productos para crear pedidos.
+- JavaScript: modales y pequenas interacciones de las vistas Blade.
+- Vite: compila CSS y JavaScript.
+- DomPDF: genera albaranes y facturas en PDF.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Estructura importante
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- `routes/web.php`: define las rutas web. Las rutas de pedidos y administracion estan protegidas con `auth`.
+- `app/Http/Controllers/PedidoController.php`: concentra la logica principal de pedidos, usuarios, productos, estados, documentos y filtros.
+- `app/Models`: contiene los modelos de la base de datos y sus relaciones.
+- `resources/views/pedidos/admin.blade.php`: panel del administrador.
+- `resources/views/pedidos/repartidor.blade.php`: gestion de pedidos por repartidor.
+- `resources/views/pedidos/cliente.blade.php`: zona del cliente y punto donde se monta Vue.
+- `resources/js/app.js`: registra los modales propios y monta Vue solo si existe el contenedor del creador de pedidos.
+- `resources/js/components/PedidoBuilder.vue`: componente Vue para buscar productos, elegir cantidades y enviar el pedido.
 
-## Learning Laravel
+## Flujo de pedidos
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+1. El cliente crea un pedido desde el componente Vue.
+2. Laravel valida el usuario y crea el pedido con estado `recibido`.
+3. El pedido se asigna a un repartidor de la misma zona.
+4. El repartidor marca productos preparados y el estado pasa a `preparacion`.
+5. El pedido puede avanzar a `reparto` y luego a `entregado`.
+6. El sistema genera albaran cuando el pedido entra en preparacion/reparto/entregado.
+7. El sistema genera factura cuando el pedido queda entregado.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Estados de pedido
 
-## Laravel Sponsors
+- `recibido`: pedido creado y pendiente de preparacion.
+- `preparacion`: algun producto ya esta marcado como preparado.
+- `reparto`: el pedido esta saliendo hacia el cliente.
+- `entregado`: el pedido ha sido entregado y puede tener factura.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Seguridad
 
-### Premium Partners
+El proyecto ya incluye varias medidas importantes:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+- Autenticacion: las rutas de pedidos estan dentro de `Route::middleware('auth')`.
+- CSRF: los formularios Blade usan `@csrf`, y Vue envia el token CSRF al crear pedidos.
+- Roles: el modelo `User` distingue `admin`, `repartidor` y `cliente`.
+- Control de permisos: el controlador bloquea acciones segun el rol. Por ejemplo, un cliente no puede cambiar estados y un repartidor solo gestiona pedidos de su zona.
+- Validacion de datos: altas y actualizaciones de usuarios/productos usan `$request->validate()`.
+- Password hashing: las contrasenas se guardan con hash mediante Laravel/Hash.
+- Proteccion basica de datos: Blade escapa variables con `{{ }}` para reducir riesgo de XSS.
+- Restricciones de borrado: no se elimina un usuario o producto si tiene pedidos asociados.
 
-## Contributing
+### Tokens usados
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+El proyecto usa tokens internos de Laravel:
 
-## Code of Conduct
+- Token CSRF: protege formularios y peticiones para evitar envios falsos. En Blade se usa con `@csrf` y en Vue se envia como `csrfToken`.
+- Token de recuperacion de contraseña: se genera cuando un usuario pide restablecer su contraseña o cuando el administrador envia un enlace de recuperacion.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+No se usan tokens API, JWT, Bearer tokens, Sanctum ni Passport.
 
-## Security Vulnerabilities
+## Vue
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Vue esta instalado y configurado:
 
-## License
+- `package.json` incluye `vue` y `@vitejs/plugin-vue`.
+- `vite.config.js` carga el plugin de Vue.
+- `resources/js/app.js` importa `createApp` y monta `PedidoBuilder.vue`.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Actualmente Vue se usa solo para el creador de pedidos del cliente. El administrador y el repartidor funcionan con Blade, Tailwind y JavaScript propio. Esto esta bien para este proyecto: Vue se usa donde aporta dinamismo real, y Blade queda para pantallas de gestion mas clasicas.
+
+## Tailwind y responsive
+
+Los estilos se hacen con clases Tailwind directamente en Blade/Vue. Se usan prefijos como `sm:`, `md:` y `lg:` para adaptar la interfaz:
+
+- En movil, los formularios y tablas se apilan o permiten scroll horizontal.
+- En escritorio, los controles se muestran en fila cuando hay espacio.
+- Los componentes reutilizables como `btn-primary`, `btn-danger`, `input-base` y `panel` se definen en `resources/css/app.css`.
+
+
+
+## Comandos utiles
+Arranca Vite para compilar CSS y JS durante desarrollo.
+```bash
+npm run dev
+```
+Genera los assets finales para produccion.
+
+```bash
+npm run build
+```
+Ejecuta los tests del proyecto.
+
+```bash
+php artisan test
+```

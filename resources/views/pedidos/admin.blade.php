@@ -94,7 +94,7 @@
             <div class="space-y-6 sm:space-y-8">
                 <div>
                     <p class="text-xs font-bold uppercase tracking-[0.22em] text-sky-600 sm:text-sm">Administración</p>
-                    <h2 class="mt-4 text-3xl font-semibold tracking-tight text-slate-900 sm:text-[3.5rem] sm:leading-none">Panel de control TROPA</h2>
+                    <h2 class="mt-4 text-3xl font-semibold tracking-tight text-slate-900 sm:text-[3.5rem] sm:leading-none">Panel de control</h2>
                     <p class="mt-4 max-w-3xl text-base text-slate-500 sm:mt-6 sm:text-[1.05rem]">
                         Gestiona usuarios, productos, pedidos y stock desde un único sitio.
                     </p>
@@ -227,7 +227,7 @@
                     </div>
                     <div>
                         <h3 class="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">Crear producto</h3>
-                        <p class="mt-1 text-sm text-slate-500">Añade nuevos productos y déjalos listos para pedidos.</p>
+                        <p class="mt-1 text-sm text-slate-500">Añade nuevos productos.</p>
                     </div>
                 </div>
 
@@ -284,7 +284,7 @@
                 </div>
                 <div>
                     <h3 class="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">Gestionar usuarios</h3>
-                    <p class="mt-1 text-sm text-slate-500">Edita datos, cambia roles y elimina usuarios cuando sea necesario.</p>
+                    <p class="mt-1 text-sm text-slate-500">Edita datos, cambia roles y elimina usuarios.</p>
                 </div>
             </div>
 
@@ -405,7 +405,7 @@
                 </div>
                 <div>
                     <h3 class="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">Gestionar productos y stock</h3>
-                    <p class="mt-1 text-sm text-slate-500">Actualiza precio, categoría, unidad y reposición de stock por categorías.</p>
+                    <p class="mt-1 text-sm text-slate-500">Actualiza precio, categoría, unidad y reposición de stock.</p>
                 </div>
             </div>
 
@@ -512,7 +512,7 @@
                 </div>
                 <div>
                     <h3 id="admin-ventas" class="text-xl font-semibold tracking-tight text-slate-900 scroll-mt-24 sm:text-2xl">Gestionar pedidos</h3>
-                    <p class="mt-1 text-sm text-slate-500">Supervisión completa de clientes, repartidores, estados y documentos.</p>
+                    <p class="mt-1 text-sm text-slate-500">Supervisión completa de pedidos junto a documentos, como facturas y albaranes.</p>
                 </div>
             </div>
 
@@ -592,9 +592,9 @@
                                             <td class="estado-pedido px-5 py-5">
                                                 <x-estado-pedido :estado="$pedido->estado" />
                                             </td>
-                                            <td class="px-5 py-5" x-data="{ open: false }" @keydown.escape.window="open = false">
+                                            <td class="px-5 py-5">
                                                 <div class="flex flex-wrap gap-2">
-                                                    <button class="btn-primary gap-2 !rounded-xl !px-4 !py-2.5 !text-xs" type="button" @click="open = true">
+                                                    <button class="btn-primary gap-2 !rounded-xl !px-4 !py-2.5 !text-xs" type="button" data-modal-open="admin-pedido-{{ $pedido->id }}">
                                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                                             <path stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
                                                         </svg>
@@ -613,64 +613,62 @@
                                                     </form>
                                                 </div>
 
-                                                <template x-teleport="body">
-                                                    <div x-show="open" x-cloak>
-                                                        <div class="modal-overlay" @click="open = false"></div>
-                                                        <div class="modal-panel max-h-[85vh] max-w-3xl overflow-y-auto" @click.stop>
-                                                            <div class="modal-header">
-                                                                <div>
-                                                                    <h3 class="text-lg font-semibold text-slate-900">Pedido #{{ $pedido->id }}</h3>
-                                                                    <p class="text-sm text-slate-500">
-                                                                        Cliente: {{ $pedido->cliente->name ?? 'Sin cliente' }} · Repartidor: {{ $pedido->repartidor->name ?? 'Sin asignar' }}
-                                                                    </p>
-                                                                </div>
-                                                                <button class="btn-secondary !rounded-xl" type="button" @click="open = false">Cerrar</button>
+                                                <div id="admin-pedido-{{ $pedido->id }}" class="hidden" data-modal>
+                                                    <div class="modal-overlay" data-modal-close></div>
+                                                    <div class="modal-panel max-h-[85vh] max-w-3xl overflow-y-auto">
+                                                        <div class="modal-header">
+                                                            <div>
+                                                                <h3 class="text-lg font-semibold text-slate-900">Pedido #{{ $pedido->id }}</h3>
+                                                                <p class="text-sm text-slate-500">
+                                                                    Cliente: {{ $pedido->cliente->name ?? 'Sin cliente' }} · Repartidor: {{ $pedido->repartidor->name ?? 'Sin asignar' }}
+                                                                </p>
                                                             </div>
+                                                            <button class="btn-secondary !rounded-xl" type="button" data-modal-close>Cerrar</button>
+                                                        </div>
 
-                                                            <div class="space-y-4">
-                                                                @foreach ($categorias as $categoria)
-                                                                    @php
-                                                                        $productosCategoria = $pedido->productos->where('categoria_id', $categoria->id);
-                                                                    @endphp
+                                                        <div class="space-y-4">
+                                                            @foreach ($categorias as $categoria)
+                                                                @php
+                                                                    $productosCategoria = $pedido->productos->where('categoria_id', $categoria->id);
+                                                                @endphp
 
-                                                                    @if ($productosCategoria->isNotEmpty())
-                                                                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                                                            <h4 class="font-semibold text-slate-800">{{ $categoria->nombre }}</h4>
-                                                                            <ul class="mt-2 space-y-1 text-sm text-slate-600">
-                                                                                @foreach ($productosCategoria as $producto)
-                                                                                    <li>{{ $producto->nombre }} · Cantidad: {{ $producto->pivot->cantidad }} · Preparado: {{ $producto->pivot->preparado ? 'Sí' : 'No' }}</li>
-                                                                                @endforeach
-                                                                            </ul>
-                                                                        </div>
+                                                                @if ($productosCategoria->isNotEmpty())
+                                                                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                                                        <h4 class="font-semibold text-slate-800">{{ $categoria->nombre }}</h4>
+                                                                        <ul class="mt-2 space-y-1 text-sm text-slate-600">
+                                                                            @foreach ($productosCategoria as $producto)
+                                                                                <li>{{ $producto->nombre }} · Cantidad: {{ $producto->pivot->cantidad }} · Preparado: {{ $producto->pivot->preparado ? 'Sí' : 'No' }}</li>
+                                                                            @endforeach
+                                                                        </ul>
+                                                                    </div>
+                                                                @endif
+                                                            @endforeach
+
+                                                            <div class="grid gap-3 md:grid-cols-2">
+                                                                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                                                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Albarán</p>
+                                                                    @if($pedido->albaran?->archivoPDF)
+                                                                        <a href="{{ asset($pedido->albaran->archivoPDF) }}" target="_blank" class="btn-secondary mt-3 inline-flex !rounded-xl !px-4 !py-2 !text-xs">
+                                                                            Ver albarán
+                                                                        </a>
+                                                                    @else
+                                                                        <p class="mt-2 text-sm text-slate-700">Pendiente</p>
                                                                     @endif
-                                                                @endforeach
-
-                                                                <div class="grid gap-3 md:grid-cols-2">
-                                                                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                                                                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Albarán</p>
-                                                                        @if($pedido->albaran?->archivoPDF)
-                                                                            <a href="{{ asset($pedido->albaran->archivoPDF) }}" target="_blank" class="btn-secondary mt-3 inline-flex !rounded-xl !px-4 !py-2 !text-xs">
-                                                                                Ver albarán
-                                                                            </a>
-                                                                        @else
-                                                                            <p class="mt-2 text-sm text-slate-700">Pendiente</p>
-                                                                        @endif
-                                                                    </div>
-                                                                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                                                                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Factura</p>
-                                                                        @if($pedido->factura?->archivoPDF)
-                                                                            <a href="{{ asset($pedido->factura->archivoPDF) }}" target="_blank" class="btn-secondary mt-3 inline-flex !rounded-xl !px-4 !py-2 !text-xs">
-                                                                                Ver factura
-                                                                            </a>
-                                                                        @else
-                                                                            <p class="mt-2 text-sm text-slate-700">Pendiente</p>
-                                                                        @endif
-                                                                    </div>
+                                                                </div>
+                                                                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                                                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Factura</p>
+                                                                    @if($pedido->factura?->archivoPDF)
+                                                                        <a href="{{ asset($pedido->factura->archivoPDF) }}" target="_blank" class="btn-secondary mt-3 inline-flex !rounded-xl !px-4 !py-2 !text-xs">
+                                                                            Ver factura
+                                                                        </a>
+                                                                    @else
+                                                                        <p class="mt-2 text-sm text-slate-700">Pendiente</p>
+                                                                    @endif
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </template>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach
