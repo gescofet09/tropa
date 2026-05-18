@@ -295,25 +295,68 @@ class PedidoController extends Controller
     public function repetir(Pedido $pedido)
     {
         $user = Auth::user();
-        if(!$user->esCliente()) {
+
+        if (!$user->esCliente()) {
             return back()->with('error', 'No autorizado');
         }
 
-        $baseImponible = $this->calcularBasePedido($pedido);
+        $repartidor = User::where('rol', 'repartidor')
+            ->where('zona_id', $user->zona_id)
+            ->first();
+
+        if (!$repartidor) {
+            return back()->with('error', 'No hay repartidores disponibles en tu zona');
+        }
 
         $nuevoPedido = Pedido::create([
             'usuario_id' => $user->id,
-            'repartidor_id' => $pedido->repartidor_id,
+            'repartidor_id' => $repartidor->id,
             'estado' => 'recibido',
-            'total' => $this->calcularTotalConIgic($baseImponible)
+            'total' => 0
         ]);
 
+        $baseImponible = 0;
+        $stockInsuficiente = false;
+
         foreach ($pedido->productos as $producto) {
+
+            $cantidadOriginal = $producto->pivot->cantidad;
+
+            // Si no queda stock
+            if ($producto->stock <= 0) {
+                $stockInsuficiente = true;
+                continue;
+            }
+
+            // Ajustar cantidad al stock disponible
+            $cantidadFinal = min($cantidadOriginal, $producto->stock);
+
+            // Si no hay suficiente
+            if ($cantidadFinal < $cantidadOriginal) {
+                $stockInsuficiente = true;
+            }
+
             $nuevoPedido->productos()->attach($producto->id, [
-                'cantidad' => $producto->pivot->cantidad,
+                'cantidad' => $cantidadFinal,
                 'precio_unitario' => $producto->pivot->precio_unitario,
                 'preparado' => false
             ]);
+
+            // DESCONTAR STOCK
+            $producto->stock -= $cantidadFinal;
+            $producto->save();
+
+            $baseImponible += $producto->pivot->precio_unitario * $cantidadFinal;
+        }
+
+        $nuevoPedido->total = $this->calcularTotalConIgic($baseImponible);
+        $nuevoPedido->save();
+
+        if ($stockInsuficiente) {
+            return back()->with(
+                'success',
+                'Pedido realizado parcialmente. Algunons productos tenían stock insuficiente.'
+            );
         }
 
         return back()->with('success', 'Pedido repetido correctamente');
@@ -381,6 +424,10 @@ class PedidoController extends Controller
 
         if (Auth::id() === $user->id) {
             return back()->with('error', 'No puedes eliminar tu propio usuario.');
+        }
+
+        if ($user->pedidos()->exists()) {
+            return back()->with('error', 'No puedes eliminar un usuario con pedidos asociados.');
         }
 
         $user->delete();
