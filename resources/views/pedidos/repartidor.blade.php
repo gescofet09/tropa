@@ -10,8 +10,9 @@
             'entregado' => 'Entregado',
         ];
         $estadosPendientes = ['recibido', 'preparacion'];
+        $pedidosPagina = method_exists($pedidos, 'getCollection') ? $pedidos->getCollection() : $pedidos;
 
-        $pedidosPorCliente = $pedidos
+        $pedidosPorCliente = $pedidosPagina
             ->groupBy(fn ($pedido) => $pedido->cliente?->id ? 'cliente-' . $pedido->cliente->id : 'sin-cliente')
             ->sortBy(function ($grupo) use ($estadosPendientes) {
                 $tienePendientes = $grupo->contains(function ($pedido) use ($estadosPendientes) {
@@ -188,6 +189,12 @@
                 </details>
             @endforeach
         </div>
+
+        @if (method_exists($pedidos, 'hasPages') && $pedidos->hasPages())
+            <div class="pt-2">
+                {{ $pedidos->links() }}
+            </div>
+        @endif
     </div>
 
     <script>

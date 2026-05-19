@@ -128,6 +128,12 @@
                 </tbody>
             </table>
         </div>
+
+        @if (method_exists($pedidos, 'hasPages') && $pedidos->hasPages())
+            <div class="mt-6">
+                {{ $pedidos->links() }}
+            </div>
+        @endif
     </section>
 </div>
 

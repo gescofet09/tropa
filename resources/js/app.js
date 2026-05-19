@@ -42,6 +42,32 @@ document.addEventListener('keydown', (event) => {
     document.querySelectorAll('[data-modal]:not(.hidden)').forEach(closeModal);
 });
 
+function autoDismissMessages() {
+    const messages = document.querySelectorAll('.alert-success, .alert-danger, [data-auto-dismiss]');
+
+    messages.forEach((message) => {
+        if (message.dataset.dismissScheduled === 'true') {
+            return;
+        }
+
+        message.dataset.dismissScheduled = 'true';
+
+        window.setTimeout(() => {
+            message.classList.add('is-dismissing');
+
+            window.setTimeout(() => {
+                message.remove();
+            }, 300);
+        }, 3000);
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', autoDismissMessages);
+} else {
+    autoDismissMessages();
+}
+
 // Vue solo se monta en la pantalla de cliente, donde existe este contenedor.
 const pedidoBuilderRoot = document.getElementById('pedido-builder-root');
 

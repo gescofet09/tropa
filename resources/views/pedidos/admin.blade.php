@@ -85,7 +85,8 @@
             ];
             $filtrosPedidos = $filtrosPedidos ?? ['cliente' => '', 'estado' => ''];
             $filtrosPedidosActivos = filled($filtrosPedidos['cliente']) || filled($filtrosPedidos['estado']);
-            $pedidosAgrupados = $pedidos
+            $pedidosPagina = method_exists($pedidos, 'getCollection') ? $pedidos->getCollection() : $pedidos;
+            $pedidosAgrupados = $pedidosPagina
                 ->sortByDesc('id')
                 ->groupBy(fn ($pedido) => $pedido->repartidor?->id ? 'repartidor-' . $pedido->repartidor->id : 'sin-asignar');
         @endphp
@@ -682,6 +683,12 @@
                     </div>
                 @endforelse
             </div>
+
+            @if (method_exists($pedidos, 'hasPages') && $pedidos->hasPages())
+                <div class="mt-6">
+                    {{ $pedidos->links() }}
+                </div>
+            @endif
         </section>
     </div>
 

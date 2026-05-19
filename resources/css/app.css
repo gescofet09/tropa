@@ -62,7 +62,17 @@
     }
 
     .alert-warning {
-        @apply rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700;
+        @apply rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-700;
+    }
+
+    .alert-success,
+    .alert-danger,
+    [data-auto-dismiss] {
+        @apply transition duration-300 ease-in-out;
+    }
+
+    .is-dismissing {
+        @apply -translate-y-1 opacity-0;
     }
 
     .modal-overlay {

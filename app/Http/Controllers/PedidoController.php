@@ -46,7 +46,11 @@ class PedidoController extends Controller
                 $pedidosQuery->where('estado', $estadoPedido);
             }
 
-            $pedidos = $pedidosQuery->get();
+            $ventasTotales = (clone $pedidosQuery)->sum('total');
+            $pedidos = $pedidosQuery
+                ->paginate(10)
+                ->appends($request->only('cliente', 'estado'))
+                ->fragment('admin-pedidos');
 
             $this->sincronizarTotalesConIgic($pedidos);
             $this->sincronizarDocumentos($pedidos);
@@ -75,9 +79,9 @@ class PedidoController extends Controller
             $stats = [
                 'usuarios' => $usuarios->count(),
                 'productos' => $productos->count(),
-                'pedidos' => $pedidos->count(),
+                'pedidos' => $pedidos->total(),
                 'stock_bajo' => $productos->where('stock', '<=', 5)->count(),
-                'ventas_totales' => $pedidos->sum('total'),
+                'ventas_totales' => $ventasTotales,
             ];
 
             $filtrosPedidos = [
@@ -94,7 +98,9 @@ class PedidoController extends Controller
                 ->whereHas('cliente', function ($query) use ($user) {
                     $query->where('zona_id', $user->zona_id);
                 })
-                ->get();
+                ->latest()
+                ->paginate(10)
+                ->withQueryString();
 
             $this->sincronizarTotalesConIgic($pedidos);
             $this->sincronizarDocumentos($pedidos);
@@ -106,7 +112,9 @@ class PedidoController extends Controller
         if ($user->esCliente()) {
             $pedidos = Pedido::with('productos', 'factura')
                 ->where('usuario_id', $user->id)
-                ->get();
+                ->latest()
+                ->paginate(10)
+                ->withQueryString();
 
             $this->sincronizarTotalesConIgic($pedidos);
 
@@ -321,12 +329,49 @@ class PedidoController extends Controller
             return back()->with('error', 'No autorizado');
         }
 
+        if ($pedido->usuario_id !== $user->id) {
+            return back()->with('error', 'No autorizado');
+        }
+
+        $pedido->loadMissing('productos');
+
         $repartidor = User::where('rol', 'repartidor')
             ->where('zona_id', $user->zona_id)
             ->first();
 
         if (!$repartidor) {
             return back()->with('error', 'No hay repartidores disponibles en tu zona');
+        }
+
+        $lineasDisponibles = [];
+        $baseImponible = 0;
+        $stockInsuficiente = false;
+
+        foreach ($pedido->productos as $producto) {
+            $cantidadOriginal = (int) $producto->pivot->cantidad;
+
+            if ($producto->stock <= 0) {
+                $stockInsuficiente = true;
+                continue;
+            }
+
+            $cantidadFinal = min($cantidadOriginal, $producto->stock);
+
+            if ($cantidadFinal < $cantidadOriginal) {
+                $stockInsuficiente = true;
+            }
+
+            $lineasDisponibles[] = [
+                'producto' => $producto,
+                'cantidad' => $cantidadFinal,
+                'precio_unitario' => $producto->pivot->precio_unitario,
+            ];
+
+            $baseImponible += $producto->pivot->precio_unitario * $cantidadFinal;
+        }
+
+        if (empty($lineasDisponibles)) {
+            return back()->with('error', 'No se puede repetir el pedido porque ninguno de sus productos tiene stock disponible.');
         }
 
         $nuevoPedido = Pedido::create([
@@ -336,38 +381,18 @@ class PedidoController extends Controller
             'total' => 0
         ]);
 
-        $baseImponible = 0;
-        $stockInsuficiente = false;
-
-        foreach ($pedido->productos as $producto) {
-
-            $cantidadOriginal = $producto->pivot->cantidad;
-
-            // Si no queda stock
-            if ($producto->stock <= 0) {
-                $stockInsuficiente = true;
-                continue;
-            }
-
-            // Ajustar cantidad al stock disponible
-            $cantidadFinal = min($cantidadOriginal, $producto->stock);
-
-            // Si no hay suficiente
-            if ($cantidadFinal < $cantidadOriginal) {
-                $stockInsuficiente = true;
-            }
+        foreach ($lineasDisponibles as $linea) {
+            $producto = $linea['producto'];
+            $cantidadFinal = $linea['cantidad'];
 
             $nuevoPedido->productos()->attach($producto->id, [
                 'cantidad' => $cantidadFinal,
-                'precio_unitario' => $producto->pivot->precio_unitario,
+                'precio_unitario' => $linea['precio_unitario'],
                 'preparado' => false
             ]);
 
-            // DESCONTAR STOCK
             $producto->stock -= $cantidadFinal;
             $producto->save();
-
-            $baseImponible += $producto->pivot->precio_unitario * $cantidadFinal;
         }
 
         $nuevoPedido->total = $this->calcularTotalConIgic($baseImponible);
@@ -376,7 +401,7 @@ class PedidoController extends Controller
         if ($stockInsuficiente) {
             return back()->with(
                 'success',
-                'Pedido realizado parcialmente. Algunons productos tenían stock insuficiente.'
+                'Pedido realizado parcialmente. Algunos productos tenían stock insuficiente.'
             );
         }
 
@@ -523,7 +548,9 @@ class PedidoController extends Controller
 
     private function sincronizarDocumentos($pedidos): void
     {
-        foreach ($pedidos as $pedido) {
+        $coleccionPedidos = method_exists($pedidos, 'getCollection') ? $pedidos->getCollection() : $pedidos;
+
+        foreach ($coleccionPedidos as $pedido) {
             $estado = \Illuminate\Support\Str::slug((string) $pedido->estado, '');
 
             if (in_array($estado, ['preparacion', 'reparto', 'entregado'], true)) {
@@ -535,14 +562,16 @@ class PedidoController extends Controller
             }
         }
 
-        if (method_exists($pedidos, 'load')) {
-            $pedidos->load(['albaran', 'factura']);
+        if (method_exists($coleccionPedidos, 'load')) {
+            $coleccionPedidos->load(['albaran', 'factura']);
         }
     }
 
     private function sincronizarTotalesConIgic($pedidos): void
     {
-        foreach ($pedidos as $pedido) {
+        $coleccionPedidos = method_exists($pedidos, 'getCollection') ? $pedidos->getCollection() : $pedidos;
+
+        foreach ($coleccionPedidos as $pedido) {
             $totalConIgic = $this->calcularTotalConIgic($this->calcularBasePedido($pedido));
 
             if (round((float) $pedido->total, 2) !== $totalConIgic) {
