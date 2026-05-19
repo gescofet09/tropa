@@ -259,7 +259,7 @@
 </div>
 
 <div class="footer">
-    Si tiene preguntas relacionada con esta factura, ponganse en contacto con Tropa a travé de <a href="mailto:admin@tropa.com">admin@tropa.com</a>
+    Si tiene preguntas relacionada con esta factura, ponganse en contacto con Tropa a través de <a href="mailto:admin@tropa.com">admin@tropa.com</a>
 </div>
 </body>
 </html>
