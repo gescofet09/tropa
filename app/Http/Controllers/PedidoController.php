@@ -473,7 +473,11 @@ class PedidoController extends Controller
         }
 
         if ($user->pedidos()->exists()) {
-            return back()->with('error', 'No puedes eliminar un usuario con pedidos asociados.');
+            return back()->with('error', 'No puedes eliminar un cliente con pedidos asociados.');
+        }
+
+        if ($user->repartos()->exists()) {
+            return back()->with('error', 'No puedes eliminar un repartidor con pedidos asignados.');
         }
 
         $user->delete();
